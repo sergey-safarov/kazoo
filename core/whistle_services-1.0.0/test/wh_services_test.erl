@@ -226,7 +226,6 @@ increase_quantities(#state{services=Services}=_State) ->
        ,?_assertEqual(Increment, DiffItemQuantity)
       }
      | category_quantities(Services, UpdatedServices, Increment)
-     ++ service_plan_items(State, UpdatedServices, Increment)
     ].
 
 category_quantities(CurrentServices, UpdatedServices, Increment) ->
