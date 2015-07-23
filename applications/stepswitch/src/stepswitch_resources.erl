@@ -737,8 +737,7 @@ create_resource(JObj, Resources) ->
                             ,wh_json:to_proplist(wnm_util:available_classifiers(AccountId))
                             ,JObj
                             ,Resources
-                           )
-    end.
+                           )    end.
 
 -spec create_resource(wh_proplist(), wh_proplist(), wh_json:object(), resources()) -> resources().
 create_resource([], _ConfigClassifiers, _Resource, Resources) -> Resources;
