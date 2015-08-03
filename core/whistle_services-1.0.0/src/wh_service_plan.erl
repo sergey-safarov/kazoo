@@ -313,5 +313,11 @@ cascade_quantities(CategoryId, ItemId, ServicesJObj) ->
 
     wh_services:cascade_quantities(AccountId
                                    ,IsReseller
-                                   ,props:filter_undefined([CategoryId, ItemId])
+                                   ,cascade_quantities_keys(CategoryId, ItemId)
                                   ).
+
+-spec cascade_quantities_keys(ne_binary(), api_binary()) -> ne_binaries().
+cascade_quantities_keys(<<_/binary>> = CategoryId, 'undefined') ->
+    [CategoryId];
+cascade_quantities_keys(<<_/binary>> = CategoryId, ItemId) ->
+    [CategoryId, ItemId].
