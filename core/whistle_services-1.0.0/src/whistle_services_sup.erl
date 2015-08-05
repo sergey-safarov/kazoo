@@ -17,7 +17,7 @@
 %% Helper macro for declaring children of supervisor
 -define(CHILDREN, [?CACHE_ARGS(?SERVICES_CACHE
                                ,[{'origin_bindings'
-                                  ,[[{'db', ?WH_SERVICES_DB, kzd_services:type()}]]
+                                  ,[[{'db', ?WH_SERVICES_DB}]]
                                  }]
                               )
                    ,?WORKER('wh_service_sync')
