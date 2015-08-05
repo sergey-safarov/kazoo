@@ -125,6 +125,7 @@ start_deps() ->
                                                 ,'ranch'
                                                 ,'cowlib'
                                                 ,'cowboy'
+                                                ,'whistle_services'
                                                ]],
     'ok'.
 

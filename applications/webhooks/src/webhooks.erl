@@ -60,6 +60,7 @@ start_deps() ->
                                                 ,'gproc'
                                                 ,'whistle_amqp'
                                                 ,'whistle_couch'
+                                                ,'whistle_services'
                                                ]],
     'ok'.
 

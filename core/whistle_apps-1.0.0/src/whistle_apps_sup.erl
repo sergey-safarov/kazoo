@@ -32,7 +32,6 @@
                    ,?WORKER('wh_cache')
                    ,?WORKER('whistle_apps_init')
                    ,?WORKER('whapps_controller')
-                   ,?SUPER('whistle_services_sup')
                    ,?SUPER('whistle_number_manager_sup')
                   ]).
 
