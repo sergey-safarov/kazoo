@@ -37,7 +37,7 @@ maybe_dry_run(Context, Callback, Props) ->
                                     cb_context:context().
 maybe_dry_run_by_props(Context, Callback, Props, 'true') ->
     Type = props:get_ne_binary_value(<<"type">>, Props),
-
+    lager:debug("calc services updates of ~s for ~s", [Type, cb_context:account_id(Context)]),
     UpdatedServices = calc_service_updates(Context, Type, props:delete(<<"type">>, Props)),
     RespJObj = dry_run(UpdatedServices),
     lager:debug("accepting charges: ~s", [wh_json:encode(RespJObj)]),
@@ -45,6 +45,7 @@ maybe_dry_run_by_props(Context, Callback, Props, 'true') ->
     Callback();
 maybe_dry_run_by_props(Context, Callback, Props, 'false') ->
     Type = props:get_ne_binary_value(<<"type">>, Props),
+    lager:debug("calc services updates of ~s for ~s", [Type, cb_context:account_id(Context)]),
     UpdatedServices = calc_service_updates(Context, Type, props:delete(<<"type">>, Props)),
     RespJObj = dry_run(UpdatedServices),
     lager:debug("not accepting charges: ~s", [wh_json:encode(RespJObj)]),
@@ -67,12 +68,14 @@ handle_dry_run_resp(Context, Callback, Services, RespJObj) ->
 -spec maybe_dry_run_by_type(cb_context:context(), callback(), ne_binary(), boolean()) ->
                                    cb_context:context().
 maybe_dry_run_by_type(Context, Callback, Type, 'true') ->
+    lager:debug("calc services updates of ~s for ~s", [Type, cb_context:account_id(Context)]),
     UpdatedServices = calc_service_updates(Context, Type),
     RespJObj = dry_run(UpdatedServices),
     lager:debug("accepting charges: ~s", [wh_json:encode(RespJObj)]),
     _ = accepting_charges(Context, RespJObj, UpdatedServices),
     Callback();
 maybe_dry_run_by_type(Context, Callback, Type, 'false') ->
+    lager:debug("calc services updates of ~s for ~s", [Type, cb_context:account_id(Context)]),
     UpdatedServices = calc_service_updates(Context, Type),
     RespJObj = dry_run(UpdatedServices),
 
@@ -202,12 +205,19 @@ calc_service_updates(Context, <<"user">>) ->
 calc_service_updates(Context, <<"limits">>) ->
     Services = fetch_service(Context),
     ReqData = cb_context:req_data(Context),
+
+    ItemTwoWay = wh_service_limits:item_twoway(),
+    ItemOutbound = wh_service_limits:item_outbound(),
+    ItemInbound = wh_service_limits:item_inbound(),
+
     Updates =
         wh_json:from_list(
-          [{<<"twoway_trunks">>, wh_json:get_integer_value(<<"twoway_trunks">>, ReqData, 0)}
-           ,{<<"inbound_trunks">>, wh_json:get_integer_value(<<"inbound_trunks">>, ReqData, 0)}
-           ,{<<"outbound_trunks">>, wh_json:get_integer_value(<<"outbound_trunks">>, ReqData, 0)}
-          ]),
+          props:filter_undefined(
+            [{ItemTwoWay, wh_json:get_integer_value(ItemTwoWay, ReqData)}
+             ,{ItemInbound, wh_json:get_integer_value(ItemInbound, ReqData)}
+             ,{ItemOutbound, wh_json:get_integer_value(ItemOutbound, ReqData)}
+            ])
+         ),
     wh_service_limits:reconcile(Services, Updates);
 calc_service_updates(Context, <<"port_request">>) ->
     Services = fetch_service(Context),
