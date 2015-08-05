@@ -491,11 +491,18 @@ get_billing_id(<<_/binary>> = Account) ->
 -spec update(ne_binary(), ne_binary(), integer(), services()) -> services().
 update(CategoryId, ItemId, Quantity, Services) when not is_integer(Quantity) ->
     update(CategoryId, ItemId, wh_util:to_integer(Quantity), Services);
-update(CategoryId, ItemId, Quantity, #wh_services{updates=JObj}=Services)
+update(CategoryId, ItemId, Quantity
+       ,#wh_services{updates=JObj
+                     ,account_id=_AccountId
+                    }=Services)
   when is_binary(CategoryId),
        is_binary(ItemId) ->
-    lager:debug("setting ~s.~s to ~p in updates", [CategoryId, ItemId, Quantity]),
-    Services#wh_services{updates=wh_json:set_value([CategoryId, ItemId], Quantity, JObj)}.
+    lager:debug("setting ~s.~s to ~p in updates for account ~s"
+                ,[CategoryId, ItemId, Quantity, _AccountId]
+               ),
+    Services#wh_services{
+      updates=wh_json:set_value([CategoryId, ItemId], Quantity, JObj)
+     }.
 
 %%--------------------------------------------------------------------
 %% @public
@@ -834,7 +841,9 @@ quantity(CategoryId, ItemId, JObj, Updates) ->
 diff_quantities(#wh_services{deleted='true'}) -> 'undefined';
 diff_quantities(#wh_services{jobj=JObj
                              ,updates=Updates
+                             ,account_id=_AccountId
                             }) ->
+    lager:debug("calculating diff quantities for account ~s", [_AccountId]),
     wh_json:foldl(fun diff_cat_quantities/3, Updates, kzd_services:quantities(JObj)).
 
 -spec diff_cat_quantities(ne_binary(), wh_json:object(), wh_json:object()) -> wh_json:object().
@@ -867,17 +876,22 @@ diff_item_quantities(ItemId, ItemQuantity, Updates, CategoryId) ->
     UpdateQuantity = wh_json:get_integer_value([CategoryId, ItemId], Updates, ItemQuantity),
     maybe_update_diff([CategoryId, ItemId], ItemQuantity, UpdateQuantity, Updates).
 
+-spec maybe_update_diff(wh_json:key(), integer(), api_integer(), wh_json:object()) ->
+                               wh_json:object().
 maybe_update_diff(_Key, _ItemQuantity, 'undefined', Updates) ->
     lager:debug("no update for ~p", [_Key]),
     Updates;
 maybe_update_diff(_Key, 0, 0, Updates) ->
-    lager:debug("not updating ~p", [_Key]),
+    lager:debug("not updating ~p, no change", [_Key]),
     Updates;
 maybe_update_diff(Key, ItemQuantity, ItemQuantity, Updates) ->
     lager:debug("no change in quantity, removing ~p", [Key]),
     wh_json:delete_key(Key, Updates);
+maybe_update_diff(_Key, _ItemQuantity, 0, Updates) ->
+    lager:debug("no update quantity for ~p: ignoring item q ~p", [_Key, _ItemQuantity]),
+    Updates;
 maybe_update_diff(Key, ItemQuantity, UpdateQuantity, Updates) ->
-    lager:debug("updating ~p from ~p(i) to ~p(u)", [Key, ItemQuantity, UpdateQuantity]),
+    lager:debug("updating diff of ~p: ~p(u) - ~p(i)", [Key, UpdateQuantity, ItemQuantity]),
     wh_json:set_value(Key, UpdateQuantity - ItemQuantity, Updates).
 
 diff_quantity(_, _, #wh_services{deleted='true'}) -> 0;
