@@ -22,7 +22,7 @@ There was a service\_plan doc. It defined a simple service: charge $1 per sip de
      ,"pvt_type":"service_plan"
     }
 
-And the admins rejoiced, for they could now bill their accounts for SIP devices.
+And the admins rejoiced, for they could now bill their accounts for SIP devices. They saved this document into their admin account.
 
 # The Account Is Born
 
@@ -152,8 +152,7 @@ When **M** creates **R1**, it applies a service plan (or several) to the account
 
 Now that **R1** exists and is a reseller, let's look at when the **R1** admin creates a device and see what should occur.
 
-When attempting the first PUT to devices, Crossbar should return a 402 with a payload like:
-
+When attempting the first PUT to **R1**'s devices, Crossbar should return a 402 with a payload like:
 
     {"data":{
          "devices":{
