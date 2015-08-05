@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% @copyright (C) 2012-2014, 2600Hz INC
+%%% @copyright (C) 2012-2015, 2600Hz INC
 %%% @doc
 %%%
 %%% @end
@@ -701,8 +701,8 @@ migrate_limits(Account) ->
     JObj = wh_json:from_list(
              props:filter_undefined(
                [{<<"_id">>, <<"limits">>}
-                ,{<<"twoway_trunks">>, TT}
-                ,{<<"inbound_trunks">>, IT}
+                ,{wh_service_limits:item_twoway(), TT}
+                ,{wh_service_limits:item_inbound(), IT}
                 ,{<<"pvt_account_db">>, AccountDb}
                 ,{<<"pvt_account_id">>, wh_util:format_account_id(Account, 'raw')}
                 ,{<<"pvt_type">>, <<"limits">>}

@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% @copyright (C) 2012-2014, 2600Hz INC
+%%% @copyright (C) 2012-2015, 2600Hz INC
 %%% @doc
 %%%
 %%% @end
@@ -79,9 +79,9 @@ fetch(Account) ->
                      ,enabled = get_limit_boolean(<<"enabled">>, JObj, 'true')
                      ,calls = get_limit(<<"calls">>, JObj, -1)
                      ,resource_consuming_calls = get_limit(<<"resource_consuming_calls">>, JObj, -1)
-                     ,inbound_trunks = get_limit(<<"inbound_trunks">>, JObj, 0)
-                     ,outbound_trunks = get_limit(<<"outbound_trunks">>, JObj, 0)
-                     ,twoway_trunks = get_limit(<<"twoway_trunks">>, JObj, -1)
+                     ,inbound_trunks = get_limit(wh_service_limits:item_inbound(), JObj, 0)
+                     ,outbound_trunks = get_limit(wh_service_limits:item_outbound(), JObj, 0)
+                     ,twoway_trunks = get_limit(wh_service_limits:item_twoway(), JObj, -1)
                      ,bundled_inbound_trunks = get_bundled_inbound_limit(AccountDb, JObj)
                      ,bundled_outbound_trunks = get_bundled_outbound_limit(AccountDb, JObj)
                      ,bundled_twoway_trunks = get_bundled_twoway_limit(AccountDb, JObj)
