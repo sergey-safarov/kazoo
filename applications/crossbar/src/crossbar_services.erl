@@ -359,13 +359,12 @@ leak_auth_pvt_fields(JObj) ->
 save_an_audit_log(_Context, 'undefined') -> 'ok';
 save_an_audit_log(Context, Services) ->
     BaseAuditLog = base_audit_log(Context, Services),
-    lager:debug("attempting to save audit log for ~s (~s)"
-                ,[cb_context:account_id(Context), wh_services:account_id(Services)]
-               ),
     case cb_context:account_id(Context) =:= wh_services:account_id(Services) of
-        'true' -> 'ok';
+        'true' ->
+            lager:debug("not forcing audit log to be saved to ~s", [wh_services:account_id(Services)]);
         'false' ->
-            (catch save_subaccount_audit_log(Context, BaseAuditLog))
+            _Res = (catch save_subaccount_audit_log(Context, BaseAuditLog)),
+            lager:debug("saving audit log to ~s: ~p", [cb_context:account_id(Context), _Res])
     end,
     kzd_audit_log:save(Services, BaseAuditLog).
 
