@@ -90,7 +90,7 @@ restart_app(App) when is_atom(App) ->
           ,'ranch'
           ,'sasl','socketio','ssl','stdlib','syslog'
           ,'webseq'
-          ,'whistle_amqp','whistle_apps','whistle_couch','whistle_stats'
+          ,'whistle_amqp','whistle_apps','whistle_couch','whistle_services','whistle_stats'
           ,'xmerl'
           ,'goldrush'
           ,'compiler', 'syntax_tools'
