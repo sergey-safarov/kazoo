@@ -12,6 +12,7 @@
          ,item_twoway/0
          ,item_inbound/0
          ,item_outbound/0
+         ,category/0
         ]).
 
 -include("../whistle_services.hrl").
@@ -67,9 +68,11 @@ maybe_update_key(Key, JObj, Services) ->
             wh_services:update(?CATEGORY_ID, Key, Quantity, Services)
     end.
 
+-spec category() -> ne_binary().
 -spec item_twoway() -> ne_binary().
 -spec item_outbound() -> ne_binary().
 -spec item_inbound() -> ne_binary().
+category() -> ?CATEGORY_ID.
 item_twoway() -> ?ITEM_TWOWAY.
 item_outbound() -> ?ITEM_OUTBOUND.
 item_inbound() -> ?ITEM_INBOUND.
