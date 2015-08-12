@@ -37,7 +37,9 @@ maybe_dry_run(Context, Callback, Props) ->
                                     cb_context:context().
 maybe_dry_run_by_props(Context, Callback, Props, 'true') ->
     Type = props:get_ne_binary_value(<<"type">>, Props),
-    lager:debug("calc services updates of ~s for ~s", [Type, cb_context:account_id(Context)]),
+    lager:debug("calc services updates of ~s for ~s"
+                ,[Type, cb_context:account_id(Context)]
+               ),
     UpdatedServices = calc_service_updates(Context, Type, props:delete(<<"type">>, Props)),
     RespJObj = dry_run(UpdatedServices),
     lager:debug("accepting charges: ~s", [wh_json:encode(RespJObj)]),
@@ -194,65 +196,35 @@ dry_run(Services) ->
                                   wh_services:services() | 'undefined'.
 calc_service_updates(Context, <<"device">>) ->
     DeviceType = kz_device:device_type(cb_context:doc(Context)),
-    Services = fetch_service(Context),
-
-    wh_service_devices:reconcile(Services, DeviceType);
+    calc_device_service_updates(fetch_service(Context), DeviceType);
 calc_service_updates(Context, <<"user">>) ->
-    Services = fetch_service(Context),
     JObj = cb_context:doc(Context),
     UserType = wh_json:get_value(<<"priv_level">>, JObj),
-    wh_service_users:reconcile(Services, UserType);
+    calc_user_service_updates(fetch_service(Context), UserType);
 calc_service_updates(Context, <<"limits">>) ->
-    Services = fetch_service(Context),
-    ReqData = cb_context:req_data(Context),
-
-    ItemTwoWay = wh_service_limits:item_twoway(),
-    ItemOutbound = wh_service_limits:item_outbound(),
-    ItemInbound = wh_service_limits:item_inbound(),
-
-    Updates =
-        wh_json:from_list(
-          props:filter_undefined(
-            [{ItemTwoWay, wh_json:get_integer_value(ItemTwoWay, ReqData)}
-             ,{ItemInbound, wh_json:get_integer_value(ItemInbound, ReqData)}
-             ,{ItemOutbound, wh_json:get_integer_value(ItemOutbound, ReqData)}
-            ])
-         ),
-    wh_service_limits:reconcile(Services, Updates);
+    Updates = limits_updates(Context),
+    calc_limits_service_updates(fetch_service(Context), Updates);
 calc_service_updates(Context, <<"port_request">>) ->
-    Services = fetch_service(Context),
-    JObj = cb_context:doc(Context),
-    Numbers = wh_json:get_value(<<"numbers">>, JObj),
-    PhoneNumbers =
-        wh_json:foldl(
-          fun port_request_foldl/3
-          ,wh_json:new()
-          ,Numbers
-         ),
-    wh_service_phone_numbers:reconcile(PhoneNumbers, Services);
+    PhoneNumbers = port_request_phone_numbers(Context),
+    calc_port_request_service_updates(fetch_service(Context), PhoneNumbers);
 calc_service_updates(Context, <<"app">>) ->
     [{<<"apps_store">>, [Id]} | _] = cb_context:req_nouns(Context),
     case wh_service_ui_apps:is_in_use(cb_context:req_data(Context)) of
         'false' -> 'undefined';
         'true' ->
-            Services = fetch_service(Context),
             AppName = wh_json:get_value(<<"name">>, cb_context:fetch(Context, Id)),
-            wh_service_ui_apps:reconcile(Services, AppName)
+            calc_app_service_updates(fetch_service(Context), AppName)
     end;
 calc_service_updates(Context, <<"ips">>) ->
-    Services = fetch_service(Context),
-    UpdatedServices = wh_service_ips:reconcile(Services, <<"dedicated">>),
-    wh_services:dry_run(UpdatedServices);
+    calc_ips_service_updates(fetch_service(Context));
 calc_service_updates(Context, <<"branding">>) ->
-    Services = fetch_service(Context),
-    wh_service_whitelabel:reconcile(Services, <<"whitelabel">>);
+    calc_branding_service_updates(fetch_service(Context));
 calc_service_updates(_Context, _Type) ->
     lager:warning("unknown type ~p, cannot calculate service updates", [_Type]),
     'undefined'.
 
 calc_service_updates(Context, <<"ips">>, Props) ->
-    Services = fetch_service(Context),
-    wh_service_ips:reconcile(Services, Props);
+    calc_ips_service_updates(fetch_service(Context), Props);
 calc_service_updates(_Context, _Type, _Props) ->
     lager:warning("unknown type ~p, cannot execute dry run", [_Type]),
     'undefined'.
@@ -262,24 +234,15 @@ calc_service_updates(_Context, _Type, _Props) ->
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec port_request_foldl(ne_binary(), wh_json:object(), wh_json:object()) -> wh_json:object().
-port_request_foldl(Number, NumberJObj, JObj) ->
-    wh_json:set_value(
-      Number
-      ,wh_json:set_value(
-         <<"features">>
-         ,[<<"port">>]
-         ,NumberJObj
-        )
-      ,JObj
-     ).
 
 %%--------------------------------------------------------------------
 %% @private
 %% @doc
 %% @end
 %%--------------------------------------------------------------------
--spec fetch_service(cb_context:context()) -> wh_services:services().
+-type reconcile_fun() :: 'reconcile' | 'reconcile_cascade'.
+-spec fetch_service(cb_context:context()) ->
+                           {wh_services:services(), reconcile_fun()}.
 fetch_service(Context) ->
     AccountId = cb_context:account_id(Context),
     AuthAccountId = cb_context:auth_account_id(Context),
@@ -288,10 +251,10 @@ fetch_service(Context) ->
             lager:debug("auth account ~s is not a reseller, loading service account ~s"
                         ,[AuthAccountId, AccountId]
                        ),
-            wh_services:fetch(AccountId);
+            {wh_services:fetch(AccountId), 'reconcile'};
         'true' ->
             lager:debug("auth account ~s is a reseller, loading service from reseller", [AuthAccountId]),
-            wh_services:fetch(AuthAccountId)
+            {wh_services:fetch(AuthAccountId), 'reconcile_cascade'}
     end.
 
 -spec reconcile(cb_context:context()) -> cb_context:context().
@@ -383,3 +346,98 @@ save_subaccount_audit_log(Context, BaseAuditLog) ->
     MODb = cb_context:account_modb(Context),
     {'ok', _Saved} = kazoo_modb:save_doc(MODb, BaseAuditLog),
     lager:debug("saved sub account ~s's audit log", [cb_context:account_id(Context)]).
+
+-spec calc_device_service_updates({wh_services:services(), reconcile_fun()}, ne_binary()) ->
+                                         wh_services:services().
+calc_device_service_updates({Services, 'reconcile'}, DeviceType) ->
+    wh_service_devices:reconcile(Services, DeviceType);
+calc_device_service_updates({Services, 'reconcile_cascade'}, DeviceType) ->
+    wh_service_devices:reconcile_cascade(Services, DeviceType).
+
+-spec calc_user_service_updates({wh_services:services(), reconcile_fun()}, ne_binary()) ->
+                                         wh_services:services().
+calc_user_service_updates({Services, 'reconcile'}, UserType) ->
+    wh_service_users:reconcile(Services, UserType);
+calc_user_service_updates({Services, 'reconcile_cascade'}, UserType) ->
+    wh_service_users:reconcile_cascade(Services, UserType).
+
+-spec calc_limits_service_updates({wh_services:services(), reconcile_fun()}, wh_json:object()) ->
+                                         wh_services:services().
+calc_limits_service_updates({Services, 'reconcile'}, Updates) ->
+    wh_service_limits:reconcile(Services, Updates);
+calc_limits_service_updates({Services, 'reconcile_cascade'}, Updates) ->
+    wh_service_limits:reconcile_cascade(Services, Updates).
+
+-spec limits_updates(cb_context:context()) -> wh_json:object().
+limits_updates(Context) ->
+    ReqData = cb_context:req_data(Context),
+
+    ItemTwoWay = wh_service_limits:item_twoway(),
+    ItemOutbound = wh_service_limits:item_outbound(),
+    ItemInbound = wh_service_limits:item_inbound(),
+
+    wh_json:from_list(
+      props:filter_undefined(
+        [{ItemTwoWay, wh_json:get_integer_value(ItemTwoWay, ReqData)}
+         ,{ItemInbound, wh_json:get_integer_value(ItemInbound, ReqData)}
+         ,{ItemOutbound, wh_json:get_integer_value(ItemOutbound, ReqData)}
+        ])
+     ).
+
+-spec calc_port_request_service_updates({wh_services:services(), reconcile_fun()}, wh_json:object()) ->
+                                               wh_services:services().
+calc_port_request_service_updates({Services, 'reconcile'}, PhoneNumbers) ->
+    wh_service_phone_numbers:reconcile(PhoneNumbers, Services);
+calc_port_request_service_updates({Services, 'reconcile_cascade'}, PhoneNumbers) ->
+    wh_service_phone_numbers:reconcile_cascade(PhoneNumbers, Services).
+
+-spec port_request_phone_numbers(cb_context:context()) -> wh_json:object().
+port_request_phone_numbers(Context) ->
+    JObj = cb_context:doc(Context),
+    Numbers = wh_json:get_value(<<"numbers">>, JObj),
+    wh_json:foldl(
+      fun port_request_foldl/3
+      ,wh_json:new()
+      ,Numbers
+     ).
+
+-spec port_request_foldl(ne_binary(), wh_json:object(), wh_json:object()) ->
+                                wh_json:object().
+port_request_foldl(Number, NumberJObj, JObj) ->
+    wh_json:set_value(
+      Number
+      ,wh_json:set_value(
+         <<"features">>
+         ,[<<"port">>]
+         ,NumberJObj
+        )
+      ,JObj
+     ).
+
+-spec calc_app_service_updates({wh_services:services(), reconcile_fun()}, ne_binary()) ->
+                                      wh_services:services().
+calc_app_service_updates({Services, 'reconcile'}, AppName) ->
+    wh_service_ui_apps:reconcile(Services, AppName);
+calc_app_service_updates({Services, 'reconcile_cascade'}, AppName) ->
+    wh_service_ui_apps:reconcile_cascade(Services, AppName).
+
+-spec calc_ips_service_updates({wh_services:services(), reconcile_fun()}) ->
+                                      wh_services:services().
+-spec calc_ips_service_updates({wh_services:services(), reconcile_fun()}, wh_proplist()) ->
+                                      wh_services:services().
+calc_ips_service_updates({Services, 'reconcile'}) ->
+    wh_service_ips:reconcile(Services, <<"dedicated">>);
+calc_ips_service_updates({Services, 'reconcile_cascade'}) ->
+    wh_service_ips:reconcile_cascade(Services, <<"dedicated">>).
+
+calc_ips_service_updates({Services, 'reconcile'}, Props) ->
+    wh_service_ips:reconcile(Services, Props);
+calc_ips_service_updates({Services, 'reconcile_cascade'}, Props) ->
+    wh_service_ips:reconcile_cascade(Services, Props).
+
+-spec calc_branding_service_updates({wh_services:services(), reconcile_fun()}) ->
+                                      wh_services:services().
+calc_branding_service_updates({Services, 'reconcile'}) ->
+    wh_service_whitelabel:reconcile(Services, <<"whitelabel">>);
+calc_branding_service_updates({Services, 'reconcile_cascade'}) ->
+    wh_service_whitelabel:reconcile_cascade(Services, <<"whitelabel">>).
