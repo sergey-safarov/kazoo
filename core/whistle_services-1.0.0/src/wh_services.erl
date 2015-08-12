@@ -23,7 +23,7 @@
 -export([fetch/1, fetch_services_doc/2
          ,flush_services/0
         ]).
--export([update/4]).
+-export([update/4, update_cascade/4]).
 -export([save/1]).
 -export([delete/1]).
 
@@ -84,7 +84,6 @@
                       ,jobj = wh_json:new() :: wh_json:object()
                       ,updates = wh_json:new() :: wh_json:object()
                       ,cascade_quantities :: api_object()
-                      ,cascade_updates = wh_json:new() :: wh_json:object()
                      }).
 -define(BASE_BACKOFF, 50).
 
@@ -489,8 +488,10 @@ get_billing_id(<<_/binary>> = Account) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec update(ne_binary(), ne_binary(), integer(), services()) -> services().
-update(CategoryId, ItemId, Quantity, Services) when not is_integer(Quantity) ->
+-spec update(ne_binary(), ne_binary(), integer(), services()) ->
+                    services().
+update(CategoryId, ItemId, Quantity, Services)
+  when not is_integer(Quantity) ->
     update(CategoryId, ItemId, wh_util:to_integer(Quantity), Services);
 update(CategoryId, ItemId, Quantity
        ,#wh_services{updates=JObj
@@ -503,6 +504,19 @@ update(CategoryId, ItemId, Quantity
                ),
     Services#wh_services{
       updates=wh_json:set_value([CategoryId, ItemId], Quantity, JObj)
+     }.
+
+-spec update_cascade(ne_binary(), ne_binary(), integer(), services()) ->
+                            services().
+update_cascade(CategoryId, ItemId, Quantity
+               ,#wh_services{account_id=_AccountId
+                             ,cascade_quantities=JObj
+                            }=Services) ->
+    lager:debug("setting ~s.~s to ~p in cascade updates for account ~s"
+                ,[CategoryId, ItemId, Quantity, _AccountId]
+               ),
+    Services#wh_services{
+      cascade_quantities=wh_json:set_value([CategoryId, ItemId], Quantity, JObj)
      }.
 
 %%--------------------------------------------------------------------
