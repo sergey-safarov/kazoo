@@ -8,9 +8,7 @@
 %%%-------------------------------------------------------------------
 -module(crossbar_services).
 
--export([maybe_dry_run/2, maybe_dry_run/3
-         ,reconcile/1
-        ]).
+-export([maybe_dry_run/2, maybe_dry_run/3]).
 
 -include("crossbar.hrl").
 
@@ -255,20 +253,6 @@ fetch_services(Context) ->
         'true' ->
             lager:debug("auth account ~s is a reseller, loading service from reseller", [AuthAccountId]),
             {wh_services:fetch(AuthAccountId), 'reconcile_cascade'}
-    end.
-
--spec reconcile(cb_context:context()) -> cb_context:context().
-reconcile(Context) ->
-    case cb_context:resp_status(Context) =:= 'success'
-        andalso cb_context:req_verb(Context) =/= ?HTTP_GET
-    of
-        'false' -> Context;
-        'true' ->
-            lager:debug("maybe reconciling services for account ~s"
-                        ,[cb_context:account_id(Context)]
-                       ),
-            _ = wh_services:save_as_dirty(cb_context:account_id(Context)),
-            Context
     end.
 
 -spec base_audit_log(cb_context:context(), wh_services:services()) ->
