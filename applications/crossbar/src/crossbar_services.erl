@@ -196,35 +196,35 @@ dry_run(Services) ->
                                   wh_services:services() | 'undefined'.
 calc_service_updates(Context, <<"device">>) ->
     DeviceType = kz_device:device_type(cb_context:doc(Context)),
-    calc_device_service_updates(fetch_service(Context), DeviceType);
+    calc_device_service_updates(fetch_services(Context), DeviceType);
 calc_service_updates(Context, <<"user">>) ->
     JObj = cb_context:doc(Context),
     UserType = wh_json:get_value(<<"priv_level">>, JObj),
-    calc_user_service_updates(fetch_service(Context), UserType);
+    calc_user_service_updates(fetch_services(Context), UserType);
 calc_service_updates(Context, <<"limits">>) ->
     Updates = limits_updates(Context),
-    calc_limits_service_updates(fetch_service(Context), Updates);
+    calc_limits_service_updates(fetch_services(Context), Updates);
 calc_service_updates(Context, <<"port_request">>) ->
     PhoneNumbers = port_request_phone_numbers(Context),
-    calc_port_request_service_updates(fetch_service(Context), PhoneNumbers);
+    calc_port_request_service_updates(fetch_services(Context), PhoneNumbers);
 calc_service_updates(Context, <<"app">>) ->
     [{<<"apps_store">>, [Id]} | _] = cb_context:req_nouns(Context),
     case wh_service_ui_apps:is_in_use(cb_context:req_data(Context)) of
         'false' -> 'undefined';
         'true' ->
             AppName = wh_json:get_value(<<"name">>, cb_context:fetch(Context, Id)),
-            calc_app_service_updates(fetch_service(Context), AppName)
+            calc_app_service_updates(fetch_services(Context), AppName)
     end;
 calc_service_updates(Context, <<"ips">>) ->
-    calc_ips_service_updates(fetch_service(Context));
+    calc_ips_service_updates(fetch_services(Context));
 calc_service_updates(Context, <<"branding">>) ->
-    calc_branding_service_updates(fetch_service(Context));
+    calc_branding_service_updates(fetch_services(Context));
 calc_service_updates(_Context, _Type) ->
     lager:warning("unknown type ~p, cannot calculate service updates", [_Type]),
     'undefined'.
 
 calc_service_updates(Context, <<"ips">>, Props) ->
-    calc_ips_service_updates(fetch_service(Context), Props);
+    calc_ips_service_updates(fetch_services(Context), Props);
 calc_service_updates(_Context, _Type, _Props) ->
     lager:warning("unknown type ~p, cannot execute dry run", [_Type]),
     'undefined'.
@@ -241,9 +241,9 @@ calc_service_updates(_Context, _Type, _Props) ->
 %% @end
 %%--------------------------------------------------------------------
 -type reconcile_fun() :: 'reconcile' | 'reconcile_cascade'.
--spec fetch_service(cb_context:context()) ->
-                           {wh_services:services(), reconcile_fun()}.
-fetch_service(Context) ->
+-spec fetch_services(cb_context:context()) ->
+                            {wh_services:services(), reconcile_fun()}.
+fetch_services(Context) ->
     AccountId = cb_context:account_id(Context),
     AuthAccountId = cb_context:auth_account_id(Context),
     case wh_services:is_reseller(AuthAccountId) of
