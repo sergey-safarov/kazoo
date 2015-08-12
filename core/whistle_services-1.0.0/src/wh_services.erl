@@ -84,6 +84,7 @@
                       ,jobj = wh_json:new() :: wh_json:object()
                       ,updates = wh_json:new() :: wh_json:object()
                       ,cascade_quantities :: api_object()
+                      ,cascade_updates = wh_json:new() :: wh_json:object()
                      }).
 -define(BASE_BACKOFF, 50).
 
