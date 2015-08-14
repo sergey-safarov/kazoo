@@ -509,6 +509,13 @@ update(CategoryId, ItemId, Quantity
 -spec update_cascade(ne_binary(), ne_binary(), integer(), services()) ->
                             services().
 update_cascade(CategoryId, ItemId, Quantity
+               ,#wh_services{cascade_quantities='undefined'}=Services
+              ) ->
+    Qs = cascade_quantities(account_id(Services), is_reseller(Services)),
+    update_cascade(CategoryId, ItemId, Quantity
+                   ,Services#wh_services{cascade_quantities=Qs}
+                  );
+update_cascade(CategoryId, ItemId, Quantity
                ,#wh_services{account_id=_AccountId
                              ,cascade_quantities=JObj
                             }=Services) ->
