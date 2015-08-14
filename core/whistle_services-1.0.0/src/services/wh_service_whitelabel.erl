@@ -8,7 +8,9 @@
 %%%-------------------------------------------------------------------
 -module(wh_service_whitelabel).
 
--export([reconcile/1, reconcile/2]).
+-export([reconcile/1, reconcile/2
+         ,reconcile_cascade/2
+        ]).
 
 -define(WHITELABEL, <<"whitelabel">>).
 -define(CATEGORY, <<"branding">>).
@@ -45,3 +47,9 @@ reconcile(Services0, ?ITEM=Item) ->
     Services1 = reconcile(Services0),
     Quantity = wh_services:updated_quantity(?CATEGORY, Item, Services1),
     wh_services:update(?CATEGORY, Item, Quantity + 1, Services1).
+
+-spec reconcile_cascade(wh_services:services(), ne_binary()) ->
+                               wh_services:services().
+reconcile_cascade(Services, ?ITEM = Item) ->
+    Quantity = wh_services:cascade_quantity(?CATEGORY, Item, Services),
+    wh_services:update_cascade(?CATEGORY, Item, Quantity+1, Services).
