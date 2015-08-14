@@ -371,9 +371,9 @@ limits_updates(Context) ->
 -spec calc_port_request_service_updates({wh_services:services(), reconcile_fun()}, wh_json:object()) ->
                                                wh_services:services().
 calc_port_request_service_updates({Services, 'reconcile'}, PhoneNumbers) ->
-    wh_service_phone_numbers:reconcile(PhoneNumbers, Services);
+    wh_service_phone_numbers:reconcile(Services, PhoneNumbers);
 calc_port_request_service_updates({Services, 'reconcile_cascade'}, PhoneNumbers) ->
-    wh_service_phone_numbers:reconcile_cascade(PhoneNumbers, Services).
+    wh_service_phone_numbers:reconcile_cascade(Services, PhoneNumbers).
 
 -spec port_request_phone_numbers(cb_context:context()) -> wh_json:object().
 port_request_phone_numbers(Context) ->
