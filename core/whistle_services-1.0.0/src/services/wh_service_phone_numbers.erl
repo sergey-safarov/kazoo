@@ -7,7 +7,9 @@
 %%%-------------------------------------------------------------------
 -module(wh_service_phone_numbers).
 
--export([reconcile/1, reconcile/2]).
+-export([reconcile/1, reconcile/2
+         ,reconcile_cascade/2
+        ]).
 -export([feature_activation_charge/2]).
 -export([phone_number_activation_charge/2]).
 
@@ -64,10 +66,27 @@ reconcile(Services) ->
         {'ok', JObj} -> reconcile(JObj, Services)
     end.
 
-reconcile(PhoneNumbers, Services) ->
+-spec reconcile(wh_services:services(), wh_json:object()) ->
+                       wh_services:services().
+reconcile(Services, PhoneNumbers) ->
     S1 = wh_services:reset_category(?PHONE_NUMBERS, Services),
     S2 = wh_services:reset_category(?NUMBER_SERVICES, S1),
-    update_numbers(wh_json:get_keys(wh_json:public_fields(PhoneNumbers)), PhoneNumbers, S2).
+    update_numbers(S2
+                   ,PhoneNumbers
+                   ,wh_json:get_keys(wh_json:public_fields(PhoneNumbers))
+                   ,fun wh_services:updated_quantity/3
+                   ,fun wh_services:update/4
+                  ).
+
+-spec reconcile_cascade(wh_services:services(), wh_json:object()) ->
+                               wh_services:services().
+reconcile_cascade(Services, PhoneNumbers) ->
+    update_numbers(Services
+                   ,PhoneNumbers
+                   ,wh_json:get_keys(wh_json:public_fields(PhoneNumbers))
+                   ,fun wh_services:cascade_quantity/3
+                   ,fun wh_services:update_cascade/4
+                  ).
 
 %%--------------------------------------------------------------------
 %% @private
@@ -75,21 +94,21 @@ reconcile(PhoneNumbers, Services) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec update_numbers(ne_binaries(), wh_json:object(), wh_services:services()) -> wh_services:services().
-update_numbers([], _, Services) ->
-    Services;
-update_numbers([Number|Numbers], JObj, Services) ->
+-spec update_numbers(wh_services:services(), wh_json:object(), wh_json:keys(), get_fun(), update_fun()) ->
+                            wh_services:services().
+update_numbers(Services, _PhoneNumbers, [], _GetFun, _UpdateFun) -> Services;
+update_numbers(Services, PhoneNumbers, [Number|Numbers], GetFun, UpdateFun) ->
     case wnm_util:is_reconcilable(Number) of
         'false' -> Services;
         'true' ->
-            Routines = [fun(S) -> update_number_quantities(Number, S, JObj) end
+            Routines = [fun(S) -> update_number_quantities(S, Number, PhoneNumbers, GetFun, UpdateFun) end
                         ,fun(S) ->
-                                 Features = wh_json:get_value([Number, <<"features">>], JObj, []),
-                                 update_feature_quantities(Features, S)
+                                 Features = wh_json:get_value([Number, <<"features">>], PhoneNumbers, []),
+                                 update_feature_quantities(S, Features, GetFun, UpdateFun)
                          end
                        ],
             UpdatedServices = lists:foldl(fun(F, S) -> F(S) end, Services, Routines),
-            update_numbers(Numbers, JObj, UpdatedServices)
+            update_numbers(UpdatedServices, PhoneNumbers, Numbers, GetFun, UpdateFun)
     end.
 
 %%--------------------------------------------------------------------
@@ -98,8 +117,9 @@ update_numbers([Number|Numbers], JObj, Services) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec update_number_quantities(ne_binary(), wh_services:services(), wh_json:object()) -> wh_services:services().
-update_number_quantities(Number, Services, JObj) ->
+-spec update_number_quantities(wh_services:services(), ne_binary(), wh_json:object(), get_fun(), update_fun()) ->
+                                      wh_services:services().
+update_number_quantities(Services, Number, JObj, GetFun, UpdateFun) ->
     ModuleName = wh_json:get_atom_value([Number, <<"module_name">>], JObj),
     case is_number_billable(Number, ModuleName) andalso
         wnm_util:classify_number(Number)
@@ -107,8 +127,8 @@ update_number_quantities(Number, Services, JObj) ->
         'false' -> Services;
         'undefined' -> Services;
         Classification ->
-            Quantity = wh_services:updated_quantity(?PHONE_NUMBERS, Classification, Services),
-            wh_services:update(?PHONE_NUMBERS, Classification, Quantity + 1, Services)
+            Quantity = GetFun(?PHONE_NUMBERS, Classification, Services),
+            UpdateFun(?PHONE_NUMBERS, Classification, Quantity + 1, Services)
     end.
 
 -spec is_number_billable(ne_binary(), api_atom()) -> boolean().
@@ -142,14 +162,15 @@ is_number_billable(DID, Module) ->
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec update_feature_quantities(ne_binaries(), wh_services:services()) -> wh_services:services().
-update_feature_quantities([], Services) ->
+-spec update_feature_quantities(wh_services:services(), ne_binaries(), get_fun(), update_fun()) ->
+                                       wh_services:services().
+update_feature_quantities(Services, [], _GetFun, _UpdateFun) ->
     Services;
-update_feature_quantities([?DASH_KEY|Features], Services) ->
-    update_feature_quantities([?EMERGENCY_SERVICES_KEY|Features], Services);
-update_feature_quantities([?VITELITY_KEY|Features], Services) ->
-    update_feature_quantities([?EMERGENCY_SERVICES_KEY|Features], Services);
-update_feature_quantities([Feature|Features], Services) ->
-    Quantity = wh_services:updated_quantity(?NUMBER_SERVICES, Feature, Services),
-    UpdatedServices = wh_services:update(?NUMBER_SERVICES, Feature, Quantity + 1, Services),
-    update_feature_quantities(Features, UpdatedServices).
+update_feature_quantities(Services, [?DASH_KEY|Features], GetFun, UpdateFun) ->
+    update_feature_quantities(Services, [?EMERGENCY_SERVICES_KEY|Features], GetFun, UpdateFun);
+update_feature_quantities(Services, [?VITELITY_KEY|Features], GetFun, UpdateFun) ->
+    update_feature_quantities(Services, [?EMERGENCY_SERVICES_KEY|Features], GetFun, UpdateFun);
+update_feature_quantities(Services, [Feature|Features], GetFun, UpdateFun) ->
+    Quantity = GetFun(?NUMBER_SERVICES, Feature, Services),
+    UpdatedServices = UpdateFun(?NUMBER_SERVICES, Feature, Quantity + 1, Services),
+    update_feature_quantities(UpdatedServices, Features, GetFun, UpdateFun).
