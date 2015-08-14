@@ -1,5 +1,5 @@
 %%%-------------------------------------------------------------------
-%%% @copyright (C) 2012-2013, 2600Hz, INC
+%%% @copyright (C) 2012-2015, 2600Hz, INC
 %%% @doc
 %%%
 %%% @end
@@ -7,8 +7,9 @@
 %%%-------------------------------------------------------------------
 -module(wh_service_users).
 
--export([reconcile/1]).
--export([reconcile/2]).
+-export([reconcile/1, reconcile/2
+         ,reconcile_cascade/2
+        ]).
 
 -include("../whistle_services.hrl").
 
@@ -45,7 +46,25 @@ reconcile(Services) ->
     end.
 
 reconcile(Services, 'undefined') -> Services;
-reconcile(Services0, UserType) ->
-    Services1 = reconcile(Services0),
-    Quantity = wh_services:updated_quantity(?SERVICE_CATEGORY, UserType, Services1),
-    wh_services:update(?SERVICE_CATEGORY, UserType, Quantity+1, Services1).
+reconcile(Services, UserType) ->
+    do_reconcile(reconcile(Services)
+                 ,UserType
+                 ,fun wh_services:updated_quantity/3
+                 ,fun wh_services:update/4
+                ).
+
+-spec reconcile_cascade(wh_services:services(), api_binary()) ->
+                               wh_services:services().
+reconcile_cascade(Services, 'undefined') -> Services;
+reconcile_cascade(Services, UserType) ->
+    do_reconcile(Services
+                 ,UserType
+                 ,fun wh_services:cascade_quantity/3
+                 ,fun wh_services:update_cascade/4
+                ).
+
+-spec do_reconcile(wh_services:services(), ne_binary(), get_fun(), update_fun()) ->
+                          wh_services:services().
+do_reconcile(Services, UserType, GetFun, UpdateFun) ->
+    Quantity = GetFun(?SERVICE_CATEGORY, UserType, Services),
+    UpdateFun(?SERVICE_CATEGORY, UserType, Quantity+1, Services).
