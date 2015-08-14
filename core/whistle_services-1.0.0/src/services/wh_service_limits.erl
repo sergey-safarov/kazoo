@@ -9,6 +9,7 @@
 -module(wh_service_limits).
 
 -export([reconcile/1, reconcile/2
+         ,reconcile_cascade/2
          ,item_twoway/0
          ,item_inbound/0
          ,item_outbound/0
@@ -47,25 +48,41 @@ reconcile(Services) ->
 %%--------------------------------------------------------------------
 -spec reconcile(wh_services:services(), wh_json:object()) -> wh_services:services().
 reconcile(Services, JObj) ->
+    do_reconcile(wh_services:reset_category(?CATEGORY_ID, Services)
+                 ,JObj
+                 ,fun wh_services:update/4
+                ).
+
+reconcile_cascade(Services, JObj) ->
+    do_reconcile(Services
+                 ,JObj
+                 ,fun wh_services:update_cascade/4
+                ).
+
+-type update_fun() :: fun((ne_binary(), ne_binary(), integer(), wh_services:services()) -> wh_services:services()).
+
+-spec do_reconcile(wh_services:services(), wh_json:object(), update_fun()) ->
+                          wh_services:services().
+do_reconcile(Services, JObj, UpdateFun) ->
     Keys = [?ITEM_TWOWAY
             ,?ITEM_INBOUND
             ,?ITEM_OUTBOUND
            ],
-    lists:foldl(fun(Key, S) -> maybe_update_key(Key, JObj, S) end
-                ,wh_services:reset_category(?CATEGORY_ID, Services)
+    lists:foldl(fun(Key, S) -> maybe_update_key(Key, JObj, S, UpdateFun) end
+                ,Services
                 ,Keys
                ).
 
--spec maybe_update_key(ne_binary(), wh_json:object(), wh_services:services()) ->
+-spec maybe_update_key(ne_binary(), wh_json:object(), wh_services:services(), update_fun()) ->
                               wh_services:services().
-maybe_update_key(Key, JObj, Services) ->
+maybe_update_key(Key, JObj, Services, UpdateFun) ->
     case wh_json:get_integer_value(Key, JObj) of
         'undefined' ->
             lager:debug("~s isn't on request, skipping"),
             Services;
         Quantity ->
             lager:debug("updating ~s to ~p from request", [Key, Quantity]),
-            wh_services:update(?CATEGORY_ID, Key, Quantity, Services)
+            UpdateFun(?CATEGORY_ID, Key, Quantity, Services)
     end.
 
 -spec category() -> ne_binary().
