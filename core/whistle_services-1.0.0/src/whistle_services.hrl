@@ -12,5 +12,10 @@
 
 -define(SERVICES_CACHE, 'whistle_services_cache').
 
+-type get_fun() :: fun((ne_binary(), ne_binary(), wh_services:services()) -> wh_services:services()).
+-type update_fun() :: fun((ne_binary(), ne_binary(), integer(), wh_services:services()) ->
+                                 wh_services:services()
+                                     ).
+
 -define(WHISTLE_SERVICES_HRL, 'true').
 -endif.

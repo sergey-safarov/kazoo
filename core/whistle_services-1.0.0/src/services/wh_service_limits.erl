@@ -59,8 +59,6 @@ reconcile_cascade(Services, JObj) ->
                  ,fun wh_services:update_cascade/4
                 ).
 
--type update_fun() :: fun((ne_binary(), ne_binary(), integer(), wh_services:services()) -> wh_services:services()).
-
 -spec do_reconcile(wh_services:services(), wh_json:object(), update_fun()) ->
                           wh_services:services().
 do_reconcile(Services, JObj, UpdateFun) ->

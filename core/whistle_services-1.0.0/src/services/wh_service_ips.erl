@@ -71,10 +71,6 @@ reconcile_cascade(Services, Props) ->
      ).
 
 -type ip_info() :: {ne_binary(), integer() | ne_binary()}.
--type get_fun() :: fun((ne_binary(), ne_binary(), wh_services:services()) -> wh_services:services()).
--type update_fun() :: fun((ne_binary(), ne_binary(), integer(), wh_services:services()) ->
-                                 wh_services:services()
-                                     ).
 
 -spec reconcile_foldl(ip_info(), wh_services:services(), get_fun(), update_fun()) ->
                              wh_services:services().
