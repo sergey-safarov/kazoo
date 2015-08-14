@@ -8,7 +8,9 @@
 %%%-------------------------------------------------------------------
 -module(wh_service_ui_apps).
 
--export([reconcile/1, reconcile/2]).
+-export([reconcile/1, reconcile/2
+         ,reconcile_cascade/2
+        ]).
 -export([is_in_use/1]).
 
 -define(ACCOUNTS_DB, <<"accounts">>).
@@ -22,8 +24,10 @@
 %%
 %% @end
 %%--------------------------------------------------------------------
--spec reconcile(wh_services:services()) -> wh_services:services().
--spec reconcile(wh_services:services(), ne_binary()) -> wh_services:services().
+-spec reconcile(wh_services:services()) ->
+                       wh_services:services().
+-spec reconcile(wh_services:services(), ne_binary()) ->
+                       wh_services:services().
 reconcile(Services) ->
     AccountId = wh_services:account_id(Services),
     case couch_mgr:open_doc(?ACCOUNTS_DB, AccountId) of
@@ -34,7 +38,8 @@ reconcile(Services) ->
             reconcile_account(Services, AccountDoc)
     end.
 
--spec reconcile_account(wh_services:services(), wh_json:object()) -> wh_services:services().
+-spec reconcile_account(wh_services:services(), wh_json:object()) ->
+                               wh_services:services().
 reconcile_account(Services, AccountDoc) ->
     wh_json:foldl(
       fun(_, AppJObj, S) ->
@@ -57,6 +62,12 @@ reconcile(Services, AppName) ->
       ,1
       ,wh_services:reset_category(<<"ui_apps">>, Services)
      ).
+
+-spec reconcile_cascade(wh_services:services(), ne_binary()) ->
+                               wh_services:services().
+reconcile_cascade(Services, AppName) ->
+    Quantity = wh_services:quantity(?CATEGORY, AppName, Services),
+    wh_services:update_cascade(?CATEGORY, AppName, Quantity+1, Services).
 
 %%--------------------------------------------------------------------
 %% @public
