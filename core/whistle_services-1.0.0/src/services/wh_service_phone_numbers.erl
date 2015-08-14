@@ -63,7 +63,7 @@ reconcile(Services) ->
         {'error', _R} ->
             lager:debug("unable to get current phone_numbers in service: ~p", [_R]),
             Services;
-        {'ok', JObj} -> reconcile(JObj, Services)
+        {'ok', PhoneNumbers} -> reconcile(Services, PhoneNumbers)
     end.
 
 -spec reconcile(wh_services:services(), wh_json:object()) ->
