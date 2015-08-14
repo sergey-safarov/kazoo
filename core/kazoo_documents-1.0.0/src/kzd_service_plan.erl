@@ -147,8 +147,8 @@ item_name(Plan, CategoryId, ItemId) ->
         )
      ).
 
--spec item_exceptions(doc(), ne_binary(), ne_binary()) -> ne_binary().
--spec item_exceptions(doc(), ne_binary(), ne_binary(), ne_binaries()) -> ne_binary().
+-spec item_exceptions(doc(), ne_binary(), ne_binary()) -> ne_binaries().
+-spec item_exceptions(doc(), ne_binary(), ne_binary(), ne_binaries()) -> ne_binaries().
 item_exceptions(Plan, CategoryId, ItemId) ->
     item_exceptions(Plan, CategoryId, ItemId, []).
 item_exceptions(Plan, CategoryId, ItemId, Default) ->
