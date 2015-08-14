@@ -56,7 +56,7 @@ reconcile(Services, Props) ->
 reconcile_cascade(Services, 'undefined') -> Services;
 reconcile_cascade(Services, <<_/binary>> = IpType) ->
     Quantity = wh_services:cascade_quantity(?CATEGORY, IpType, Services),
-    wh_services:update_cascade(?CATEGORY, IpType, Quantity+1);
+    ewh_services:update_cascade(?CATEGORY, IpType, Quantity+1, Services);
 reconcile_cascade(Services, Props) ->
     lists:foldl(
       fun(IP, S) ->
