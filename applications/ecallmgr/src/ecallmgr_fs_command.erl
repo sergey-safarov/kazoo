@@ -22,15 +22,15 @@
 set(_, _, []) -> 'ok';
 set(Node, UUID, [{K,V}]) ->
     Set = list_to_binary([UUID, " ", K, " ", V]),
-    lager:debug("~s api uuid_setvar ~s", [Node, Set]),
-    freeswitch:api(Node, 'uuid_setvar', Set);
+    lager:debug("~s api kz_uuid_setvar ~s", [Node, Set]),
+    freeswitch:api(Node, 'kz_uuid_setvar', Set);
 set(Node, UUID, [{K,V}|KVs]) ->
     Multiset = lists:foldl(fun({Key, Val}, Acc) ->
                                    [Val, "=", Key, ";" | Acc]
                            end, [V, "=", K], KVs),
     Set = list_to_binary([UUID, " ", lists:reverse(Multiset)]),
-    lager:debug("~s api uuid_setvar_mulit ~s", [Node, Set]),
-    freeswitch:api(Node, 'uuid_setvar_multi', Set).
+    lager:debug("~s api kz_uuid_setvar_multi ~s", [Node, Set]),
+    freeswitch:api(Node, 'kz_uuid_setvar_multi', Set).
 
 set(Node, UUID, K, V) -> set(Node, UUID, [{K, V}]).
 
