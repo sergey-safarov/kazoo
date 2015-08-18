@@ -181,8 +181,8 @@ handle_info({'tcp', Socket, Data}, #state{socket=Socket
                                                  ,{<<"Switch-URI">>, SwitchURI}
                                                 ]) ++ Props ,
             _ = wh_util:spawn(fun() ->
-                                      maybe_send_event(EventName, UUID, EventProps, Node),
-                                      process_event(EventName, UUID, EventProps, Node)
+                                      process_event(EventName, UUID, EventProps, Node),
+                                      maybe_send_event(EventName, UUID, EventProps, Node)
                               end),
             {'noreply', State, Timeout};
         _Else ->
@@ -321,8 +321,10 @@ maybe_bind(Node, Bindings, Attempts) ->
     end.
 
 -spec process_event(ne_binary(), api_binary(), wh_proplist(), atom()) -> any().
-process_event(<<"CHANNEL_CREATE">>, UUID, _Props, Node) ->
+process_event(<<"CHANNEL_CREATE">>, UUID, Props, Node) ->
     wh_util:put_callid(UUID),
+    _ = ecallmgr_fs_channel:new(Props, Node),
+    _ = ecallmgr_fs_channel:maybe_update_cdr_id(UUID, Props, Node),
     maybe_start_event_listener(Node, UUID);
 process_event(?CHANNEL_MOVE_RELEASED_EVENT_BIN, _, Props, Node) ->
     UUID = props:get_value(<<"old_node_channel_uuid">>, Props),
