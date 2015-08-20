@@ -28,7 +28,7 @@
 -export([reset/0]).
 
 -include("crossbar.hrl").
--include_lib("whistle_number_manager/include/wh_number_manager.hrl").
+-include_lib("kazoo_number_manager/include/knm_phone_number.hrl").
 
 -define(CALLFLOW_VIEW, <<"callflow/listing_by_number">>).
 -define(DEVICES_VIEW, <<"devices/listing_by_owner">>).
@@ -326,8 +326,8 @@ maybe_export_numbers(Db, [Number|Numbers]) ->
     _ = case couch_mgr:open_doc(Db, Number) of
             {'ok', JObj} ->
                 maybe_export_number(Number
-                                    ,wh_json:get_value(?PVT_NUMBER_STATE, JObj)
-                                    ,wh_json:get_value(<<"pvt_assigned_to">>, JObj)
+                                    ,wh_json:get_value(?PVT_STATE, JObj)
+                                    ,wh_json:get_value(?PVT_ASSIGNED_TO, JObj)
                                    );
             {'error', _R} ->
                 lager:debug("error fetching number ~s from ~d: ~p"
