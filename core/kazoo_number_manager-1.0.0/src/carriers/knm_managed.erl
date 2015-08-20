@@ -1,4 +1,12 @@
--module(wnm_managed).
+%%%-------------------------------------------------------------------
+%%% @copyright (C) 2011-2015, 2600Hz INC
+%%% @doc
+%%%
+%%% @end
+%%% @contributors
+%%%   Luis Azedo
+%%%-------------------------------------------------------------------
+-module(knm_managed).
 
 -export([find_numbers/3]).
 -export([acquire_number/1]).
@@ -8,10 +16,11 @@
 -export([is_number_billable/1]).
 -export([should_lookup_cnam/0]).
 
--include("../wnm.hrl").
+-include("../knm.hrl").
 
 -define(WH_MANAGED,<<"numbers%2Fmanaged">>).
 -define(MANAGED_VIEW_FILE, <<"views/managed.json">>).
+
 %%--------------------------------------------------------------------
 %% @public
 %% @doc
