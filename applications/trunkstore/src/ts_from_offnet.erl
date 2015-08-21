@@ -171,7 +171,7 @@ try_failover_e164(State, ToDID) ->
 get_endpoint_data(JObj) ->
     %% wh_timer:tick("inbound_route/1"),
     {ToUser, _} = whapps_util:get_destination(JObj, ?APP_NAME, <<"inbound_user_field">>),
-    ToDID = wnm_util:to_e164(ToUser),
+    ToDID = knm_converters:normalize(ToUser),
     {'ok', AcctId, NumberProps} = wh_number_manager:lookup_account_by_number(ToDID),
     ForceOut = wh_number_properties:should_force_outbound(NumberProps),
     lager:info("acct ~s force out ~s", [AcctId, ForceOut]),

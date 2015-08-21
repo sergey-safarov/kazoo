@@ -137,7 +137,7 @@ get_number(Call) ->
 
 -spec verify_entered_number(ne_binary(), whapps_call:call()) -> 'ok'.
 verify_entered_number(EnteredNumber, Call) ->
-    Number = wnm_util:to_e164(re:replace(EnteredNumber, "[^0-9]", "", ['global', {'return', 'binary'}])),
+    Number = knm_converters:normalize(re:replace(EnteredNumber, "[^0-9]", "", ['global', {'return', 'binary'}])),
     case cccp_allowed_callee(Number) of
         'true' ->
             check_restrictions(Number, Call);

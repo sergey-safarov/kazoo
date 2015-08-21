@@ -409,9 +409,9 @@ handle_originate_resp({'timeout', _T}) ->
 build_originate_req(Contact, Context) ->
     AccountId = cb_context:account_id(Context),
     JObj = cb_context:doc(Context),
-    Exten = wnm_util:to_e164(wh_json:get_binary_value(<<"extension">>, JObj)),
+    Exten = knm_converters:normalize(wh_json:get_binary_value(<<"extension">>, JObj)),
     CalleeName = wh_json:get_binary_value(<<"outbound_callee_id_name">>, JObj, Exten),
-    CalleeNumber = wnm_util:to_e164(wh_json:get_binary_value(<<"outbound_callee_id_number">>, JObj, Exten)),
+    CalleeNumber = knm_converters:normalize(wh_json:get_binary_value(<<"outbound_callee_id_number">>, JObj, Exten)),
     FriendlyName = wh_json:get_ne_value(<<"name">>, JObj, <<>>),
     OutboundNumber = wh_json:get_value(<<"caller_id_number">>, JObj, Contact),
     AutoAnswer = wh_json:is_true(<<"auto_answer">>, cb_context:query_string(Context), 'true'),
@@ -484,7 +484,7 @@ is_resp(JObj) ->
 get_c2c_contact('undefined') -> 'undefined';
 get_c2c_contact(Contact) ->
     Encoded = mochiweb_util:quote_plus(wh_util:to_list(Contact)),
-    wnm_util:to_e164(wh_util:to_binary(Encoded)).
+    knm_converters:normalize(wh_util:to_binary(Encoded)).
 
 -spec create_c2c_history_item({'success', ne_binary()} | {'error', ne_binary()}, ne_binary()) -> wh_proplist().
 create_c2c_history_item({'success', CallId}, Contact) ->

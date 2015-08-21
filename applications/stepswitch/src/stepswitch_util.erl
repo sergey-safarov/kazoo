@@ -50,7 +50,7 @@ get_inbound_destination(JObj) ->
     {Number, _} = whapps_util:get_destination(JObj, ?APP_NAME, <<"inbound_user_field">>),
     case whapps_config:get_is_true(?SS_CONFIG_CAT, <<"assume_inbound_e164">>, 'false') of
         'true' -> assume_e164(Number);
-        'false' -> wnm_util:to_e164(Number)
+        'false' -> knm_converters:normalize(Number)
     end.
 
 -spec assume_e164(ne_binary()) -> ne_binary().
@@ -67,7 +67,7 @@ assume_e164(Number) -> <<$+, Number/binary>>.
 get_outbound_destination(JObj) ->
     {Number, _} = whapps_util:get_destination(JObj, ?APP_NAME, <<"outbound_user_field">>),
      case wh_json:is_true(<<"Bypass-E164">>, JObj) of
-         'false' -> wnm_util:to_e164(Number);
+         'false' -> knm_converters:normalize(Number);
          'true' -> Number
      end.
 
@@ -127,7 +127,7 @@ correct_shortdial(Number, CIDNum) when is_binary(CIDNum) ->
     case is_binary(CIDNum) andalso (size(CIDNum) - size(Number)) of
         Length when Length =< MaxCorrection, Length >= MinCorrection ->
             Correction = binary:part(CIDNum, 0, Length),
-            CorrectedNumber = wnm_util:to_e164(<<Correction/binary, Number/binary>>),
+            CorrectedNumber = knm_converters:normalize(<<Correction/binary, Number/binary>>),
             lager:debug("corrected shortdial ~s via CID ~s to ~s"
                        ,[Number, CIDNum, CorrectedNumber]),
             CorrectedNumber;
@@ -146,7 +146,7 @@ correct_shortdial(Number, JObj) ->
               ),
     correct_shortdial(Number, CIDNum).
 
--spec get_sip_headers(wh_json:object()) -> api_object().
+-spec get_sip_headers(wh_json:object()) -> wh_json:object().
 get_sip_headers(JObj) ->
     SIPHeaders = wh_json:get_value(<<"Custom-SIP-Headers">>, JObj, wh_json:new()),
     case get_diversions(SIPHeaders) of
@@ -160,8 +160,7 @@ get_sip_headers(JObj) ->
                              )
     end.
 
--spec maybe_remove_diversions(api_object()) -> api_object().
-maybe_remove_diversions('undefined') -> 'undefined';
+-spec maybe_remove_diversions(wh_json:object()) -> wh_json:object().
 maybe_remove_diversions(JObj) ->
     wh_json:delete_key(<<"Diversions">>, JObj).
 
