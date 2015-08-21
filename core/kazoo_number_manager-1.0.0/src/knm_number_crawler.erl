@@ -6,7 +6,7 @@
 %%% @contributors
 %%%   Peter Defebvre
 %%%-------------------------------------------------------------------
--module(wnm_number_crawler).
+-module(knm_number_crawler).
 
 -behaviour(gen_server).
 
@@ -25,14 +25,14 @@
          ,code_change/3
         ]).
 
--include("wnm.hrl").
+-include("knm.hrl").
 
 -define(DISCOVERY_EXPIRY
-        ,whapps_config:get_integer(?WNM_CONFIG_CAT, <<"discovery_expiry_d">>, 90)
+        ,whapps_config:get_integer(?KNM_CONFIG_CAT, <<"discovery_expiry_d">>, 90)
        ).
 
 -define(DELETED_EXPIRY
-        ,whapps_config:get_integer(?WNM_CONFIG_CAT, <<"deleted_expiry_d">>, 90)
+        ,whapps_config:get_integer(?KNM_CONFIG_CAT, <<"deleted_expiry_d">>, 90)
        ).
 
 -define(NUMBERS_TO_CRAWL
@@ -62,14 +62,8 @@ stop() ->
 crawl_numbers() ->
     wh_util:put_callid(?MODULE),
     lager:debug("beginning a number crawl"),
-    _ = [crawl_number_db(Db) || Db <- wnm_util:get_all_number_dbs(), is_number_db(Db)],
+    _ = [crawl_number_db(Db) || Db <- knm_util:get_all_number_dbs()],
     lager:debug("finished the number crawl").
-
--spec is_number_db(ne_binary()) -> boolean().
-is_number_db(<<"numbers%2F%2B", _/binary>>) -> 'true';
-is_number_db(<<"numbers%2F", C:1, _/binary>>)
-  when is_number(C) -> 'true';
-is_number_db(_) -> 'false'.
 
 %%%===================================================================
 %%% gen_server callbacks
@@ -172,58 +166,39 @@ code_change(_OldVsn, State, _Extra) ->
 %%%===================================================================
 -spec cleanup_timer() -> reference().
 cleanup_timer() ->
-    Timeout = whapps_config:get_integer(?WNM_CONFIG_CAT, <<"crawler_timer_ms">>, ?MILLISECONDS_IN_DAY),
+    Timeout = whapps_config:get_integer(?KNM_CONFIG_CAT, <<"crawler_timer_ms">>, ?MILLISECONDS_IN_DAY),
     erlang:start_timer(Timeout, self(), 'ok').
 
 -spec crawl_number_db(ne_binary()) -> 'ok'.
 crawl_number_db(Db) ->
-    lager:debug("start crawling '~s'",[Db]),
-    crawl_number_db(Db, [{'limit', ?NUMBERS_TO_CRAWL}]).
+    crawl_number_docs(Db, couch_mgr:all_docs(Db, ['include_docs'])).
 
--spec crawl_number_db(ne_binary(), wh_proplist()) -> 'ok'.
-crawl_number_db(Db, Options) ->
-    case couch_mgr:all_docs(Db, Options) of
-        {'error', _E} ->
-            lager:debug("failed to crawl number db ~s: ~p", [Db, _E]);
-        {'ok', []} ->
-            lager:debug("finished crawling '~s'", [Db]);
-        {'ok', Docs} ->
-            case crawl_number_docs(Db, Docs) of
-                [] -> lager:debug("finished crawling '~s'", [Db]);
-                Result -> crawl_number_db(Db, [{'startkey', next_number(lists:last(Result))}
-                                               ,{'limit', ?NUMBERS_TO_CRAWL}
-                                              ])
-            end
+-spec crawl_number_docs(ne_binary(), couch_mgr:get_results_return()) -> 'ok'.
+crawl_number_docs(_Db, {'error', _E}) ->
+    lager:debug(" failed to crawl number db ~s: ~p", [_Db, _E]);
+crawl_number_docs(Db, {'ok', Docs}) ->
+    lager:debug(" starting to crawl '~s'", [Db]),
+    _ = [crawl_number_doc(
+           knm_phone_number:from_json(wh_json:get_value(<<"doc">>, Doc))
+          )
+         || Doc <- Docs,
+            is_number_doc(Doc)
+        ],
+    lager:debug(" finished crawling '~s'", [Db]).
+
+-spec is_number_doc(wh_json:object()) -> boolean().
+is_number_doc(Doc) ->
+    case wh_doc:id(Doc) of
+        <<"_design/", _/binary>> -> 'false';
+        _Id -> 'true'
     end.
 
--spec next_number(binary()) -> ne_binary().
-next_number(<<>>) ->
-    <<"\ufff0">>;
-next_number(Bin) ->
-    <<Bin/binary, "\ufff0">>.
-
--spec crawl_number_docs(ne_binary(), wh_json:objects()) -> list().
-crawl_number_docs(Db, Docs) ->
-    [crawl_number_doc(Number)
-       || Doc <- Docs, (Number = number(Db, wh_doc:id(Doc))) =/= 'not_found'
-    ].
-
--spec number(ne_binary(), ne_binary()) -> wnm_number:wnm_number() | 'not_found'.
-number(_Db, <<"_design/", _/binary>>) -> 'not_found';
-number(Db, Number) ->
-    case couch_mgr:open_doc(Db, Number) of
-        {'ok', JObj} -> wnm_number:json_to_record(JObj, 'false');
-        {'error', E} ->
-            lager:debug("error getting document for number ~s in db ~s : ~p", [Number, Db, E]),
-            'not_found'
-    end.
-
--spec crawl_number_doc(wnm_number:wnm_number()) -> ne_binary().
-crawl_number_doc(#number{number=Num}=Number) ->
+-spec crawl_number_doc(knm_phone_number:knm_number()) -> 'ok'.
+crawl_number_doc(PhoneNumber) ->
     Fs = [fun maybe_remove_discovery/1
           ,fun maybe_remove_deleted/1
          ],
-    try run_crawler_funs(Number, Fs) of
+    try run_crawler_funs(PhoneNumber, Fs) of
         _ -> 'ok'
     catch
         'throw':'number_purged' ->
@@ -237,50 +212,60 @@ crawl_number_doc(#number{number=Num}=Number) ->
     end,
     Num.
 
--spec run_crawler_funs(wnm_number:wnm_number(), functions()) -> wnm_number:wnm_number().
+-spec run_crawler_funs(knm_number:knm_number(), functions()) -> knm_number:knm_number().
 run_crawler_funs(Number, Fs) ->
     lists:foldl(fun(F, N) -> F(N) end
                 ,Number
                 ,Fs
                ).
 
--spec maybe_remove_discovery(wnm_number:wnm_number()) ->
-                                    wnm_number:wnm_number().
--spec maybe_remove_discovery(wnm_number:wnm_number(), gregorian_seconds()) ->
-                                    wnm_number:wnm_number().
-maybe_remove_discovery(#number{state=?NUMBER_STATE_DISCOVERY
-                               ,number_doc=JObj
-                              }=N) ->
-    case wh_doc:created(JObj) of
-        'undefined' -> N;
-        Created -> maybe_remove_discovery(N, Created)
-    end;
-maybe_remove_discovery(N) -> N.
+-spec maybe_remove_discovery(knm_phone_number:knm_number()) ->
+                                    knm_phone_number:knm_number().
+-spec maybe_remove_discovery(knm_phone_number:knm_number(), ne_binary()) ->
+                                    knm_phone_number:knm_number().
+maybe_remove_discovery(PhoneNumber) ->
+    maybe_remove_discovery(PhoneNumber, knm_phone_number:state(PhoneNumber)).
 
-maybe_remove_discovery(N, Created) ->
-    maybe_remove(N, Created, ?DISCOVERY_EXPIRY * ?SECONDS_IN_DAY).
+maybe_remove_discovery(PhoneNumber, ?NUMBER_STATE_DISCOVERY) ->
+    JObj = knm_phone_number:doc(PhoneNumber),
+    maybe_discovery_number_expired(PhoneNumber, wh_doc:created(JObj));
+maybe_remove_discovery(PhoneNumber, _State) ->
+    PhoneNumber.
 
--spec maybe_remove_deleted(wnm_number:wnm_number()) ->
-                                    wnm_number:wnm_number().
--spec maybe_remove_deleted(wnm_number:wnm_number(), gregorian_seconds()) ->
-                                    wnm_number:wnm_number().
-maybe_remove_deleted(#number{state=?NUMBER_STATE_DELETED
-                             ,number_doc=JObj
-                            }=N) ->
-    case wh_doc:created(JObj) of
-        'undefined' -> N;
-        Created -> maybe_remove_deleted(N, Created)
-    end;
-maybe_remove_deleted(N) -> N.
+-type created() :: gregorian_seconds() | 'undefined'.
 
-maybe_remove_deleted(N, Created) ->
-    maybe_remove(N, Created, ?DELETED_EXPIRY * ?SECONDS_IN_DAY).
+-spec maybe_discovery_number_expired(knm_phone_number:knm_number(), created()) ->
+                                            knm_phone_number:knm_number().
+maybe_discovery_number_expired(PhoneNumber, 'undefined') ->
+    PhoneNumber;
+maybe_discovery_number_expired(PhoneNumber, Created) ->
+    maybe_remove(PhoneNumber, Created, ?DISCOVERY_EXPIRY * ?SECONDS_IN_DAY).
 
--spec maybe_remove(wnm_number:wnm_number(), gregorian_seconds(), pos_integer()) ->
-                          wnm_number:wnm_number().
-maybe_remove(N, Created, Expiry) ->
+-spec maybe_remove_deleted(knm_phone_number:knm_number()) ->
+                                  knm_phone_number:knm_number().
+-spec maybe_remove_deleted(knm_phone_number:knm_number(), ne_binary()) ->
+                                  knm_phone_number:knm_number().
+maybe_remove_deleted(PhoneNumber) ->
+    maybe_remove_deleted(PhoneNumber, knm_phone_number:state(PhoneNumber)).
+
+maybe_remove_deleted(PhoneNumber, ?NUMBER_STATE_DELETED) ->
+    JObj = knm_phone_number:doc(PhoneNumber),
+    maybe_deleted_number_expired(PhoneNumber, wh_doc:created(JObj));
+maybe_remove_deleted(PhoneNumber, _State) ->
+    PhoneNumber.
+
+-spec maybe_deleted_number_expired(knm_phone_number:knm_number(), created()) ->
+                                          knm_phone_number:knm_number().
+maybe_deleted_number_expired(PhoneNumber, 'undefined') ->
+    PhoneNumber;
+maybe_deleted_number_expired(PhoneNumber, Created) ->
+    maybe_remove(PhoneNumber, Created, ?DELETED_EXPIRY * ?SECONDS_IN_DAY).
+
+-spec maybe_remove(knm_phone_number:knm_number(), gregorian_seconds(), pos_integer()) ->
+                          knm_phone_number:knm_number().
+maybe_remove(PhoneNumber, Created, Expiry) ->
     Now = wh_util:current_tstamp(),
-    case (Created + Expiry) > Now of
-        'true' -> N;
-        'false' -> wnm_number:delete(N)
+    case (Now - Expiry) > Created of
+        'true' -> PhoneNumber;
+        'false' -> knm_phone_number:delete(PhoneNumber)
     end.
