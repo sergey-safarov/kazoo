@@ -78,7 +78,7 @@ start_link(Call) ->
 %%                     {stop, Reason}
 %% @end
 %%--------------------------------------------------------------------
--spec init(whapps_call:call()) -> {'ok', state()}.
+-spec init([whapps_call:call()]) -> {'ok', state()}.
 init([Call]) ->
     process_flag('trap_exit', 'true'),
     CallId = whapps_call:call_id(Call),
@@ -189,7 +189,7 @@ code_change(_OldVsn, State, _Extra) ->
 -spec process_call_to_platform(whapps_call:call()) -> 'ok'.
 process_call_to_platform(Call) ->
     whapps_call_command:answer(Call),
-    CID = wnm_util:normalize_number(whapps_call:caller_id_number(Call)),
+    CID = knm_converters:normalize(whapps_call:caller_id_number(Call)),
     case cccp_util:authorize(CID, <<"cccps/cid_listing">>) of
         [AccountId, OutboundCID, AuthDocId] ->
             dial(AccountId, OutboundCID, AuthDocId, Call);

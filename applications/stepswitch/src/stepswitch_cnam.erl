@@ -72,7 +72,7 @@ start_link(_) ->
 -spec lookup(wh_json:object() | ne_binary()) -> wh_json:object().
 lookup(<<_/binary>> = Number) ->
     Num = case ?DISABLE_NORMALIZE of
-        'false' -> wnm_util:normalize_number(Number);
+        'false' -> knm_converters:normalize(Number);
         'true'  -> Number
     end,
     lookup(wh_json:set_values([{<<"phone_number">>, wh_util:uri_encode(Num)}
@@ -84,7 +84,7 @@ lookup(<<_/binary>> = Number) ->
 lookup(JObj) ->
     Number = wh_json:get_value(<<"Caller-ID-Number">>, JObj,  wh_util:anonymous_caller_id_number()),
     Num = case ?DISABLE_NORMALIZE of
-        'false' -> wnm_util:normalize_number(Number);
+        'false' -> knm_converters:normalize(Number);
         'true'  -> Number
     end,
     case wh_cache:fetch_local(?STEPSWITCH_CACHE, cache_key(Num)) of
