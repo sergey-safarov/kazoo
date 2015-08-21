@@ -25,6 +25,8 @@
          ,trial_time_left/1, trial_time_left/2
          ,trial_has_expired/1, trial_has_expired/2
 
+         ,dial_plan/1, dial_plan/2
+
          ,fetch/1
          ,new/0
          ,type/0
@@ -42,6 +44,7 @@
 -define(ALLOW_NUMBER_ADDITIONS, <<"pvt_wnm_allow_additions">>).
 -define(NOTIFY_PREF, <<"pvt_notification_preference">>).
 -define(KEY_TRIAL_EXPIRATION, <<"pvt_trial_expires">>).
+-define(KEY_DIAL_PLAN, <<"dial_plan">>).
 
 -define(PVT_TYPE, <<"account">>).
 
@@ -195,3 +198,10 @@ trial_has_expired(JObj) ->
     trial_has_expired(JObj, wh_util:current_tstamp()).
 trial_has_expired(JObj, Now) ->
     trial_time_left(JObj, Now) =< 0.
+
+-spec dial_plan(doc()) -> api_object().
+-spec dial_plan(doc(), Default) -> wh_json:object() | Default.
+dial_plan(JObj) ->
+    dial_plan(JObj, 'undefined').
+dial_plan(JObj, Default) ->
+    wh_json:get_json_value(?KEY_DIAL_PLAN, JObj, Default).
