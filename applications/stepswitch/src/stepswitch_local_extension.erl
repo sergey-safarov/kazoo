@@ -20,7 +20,6 @@
         ]).
 
 -include("stepswitch.hrl").
--include_lib("whistle_number_manager/include/wh_number_manager.hrl").
 
 -record(state, {number_props = [] :: wh_proplist()
                 ,resource_req :: api_object()

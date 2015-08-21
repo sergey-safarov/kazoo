@@ -3,9 +3,9 @@ ROOT = ../..
 
 EBINS = $(shell find $(ROOT)/core/whistle-* -maxdepth 2 -name ebin -print) \
 	$(shell find $(ROOT)/core/whistle_apps-* -maxdepth 2 -name ebin -print) \
-	$(shell find $(ROOT)/core/whistle_number_manager-* -maxdepth 2 -name ebin -print) \
-	$(shell find $(ROOT)/deps/lager-* -maxdepth 2 -name ebin -print) \
-	$(shell find $(ROOT)/deps/rabbitmq_client-* -maxdepth 2 -name ebin -print)
+	$(shell find $(ROOT)/deps/rabbitmq_client-* -maxdepth 2 -name ebin -print) \
+	$(shell find $(ROOT)/core/kazoo_number_manager-* -maxdepth 2 -name ebin -print) \
+	$(shell find $(ROOT)/deps/lager-* -maxdepth 2 -name ebin -print)
 PA = $(foreach EBIN,$(EBINS),-pa $(EBIN))
 
 ERLC_OPTS += -Werror +debug_info +warn_export_all $(PA)

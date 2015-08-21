@@ -20,7 +20,6 @@
         ]).
 
 -include("stepswitch.hrl").
--include_lib("whistle_number_manager/include/wh_number_manager.hrl").
 
 -record(state, {msg_id=wh_util:rand_hex_binary(12)
                 ,endpoints
