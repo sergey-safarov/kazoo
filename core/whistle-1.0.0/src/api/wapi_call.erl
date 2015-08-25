@@ -83,7 +83,7 @@
                                       ,<<"Raw-Application-Name">>, <<"Raw-Application-Data">>
                                       ,<<"Length">>, <<"Silence-Terminated">> %% Record-related
                                       ,<<"Channel-Call-State">>, <<"User-Agent">>
-                                      ,<<"Switch-Hostname">>, <<"Group-ID">>
+                                      ,<<"Group-ID">>
                                       ,<<"Control-Queue">>, <<"Channel-Moving">>
                                       ,<<"Conference-Name">>, <<"Conference-Config">>
                                       ,<<"Replaced-By">>, <<"Remote-SDP">>, <<"Local-SDP">>
@@ -97,6 +97,7 @@
                                       ,<<"Intercepted-By">>
                                       ,<<"Switch-Hostname">>, <<"Switch-Nodename">>
                                       ,<<"Switch-URL">>, <<"Switch-URI">>
+                                      ,<<"Channel-Created-Time">>
                                      ]).
 -define(CALL_EVENT_VALUES, [{<<"Event-Category">>, <<"call_event">>}]).
 -define(CALL_EVENT_TYPES, [{<<"Custom-Channel-Vars">>, fun wh_json:is_json_object/1}
