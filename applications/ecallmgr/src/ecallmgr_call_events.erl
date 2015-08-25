@@ -1128,4 +1128,4 @@ maybe_debug_channel(Props, 'true') ->
     [
     {<<"Channel-Call-State">>, wh_json:from_list(lists:sort(fun({A,_}, {B,_}) -> A =< B end, Props))}
     ].
-  
+
