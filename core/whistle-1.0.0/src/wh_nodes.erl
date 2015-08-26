@@ -474,7 +474,7 @@ handle_info({'heartbeat', Ref}, #state{heartbeat_ref=Ref
             _ = ets:insert(Tab, Node),
             wapi_nodes:publish_advertise(advertise_payload(Node))
     catch
-        _:_ -> 'ok'
+        _E:_N -> lager:debug("error creating node ~p : ~p", [_E, _N])
     end,
     _ = erlang:send_after(Heartbeat, self(), {'heartbeat', Reference}),
     {'noreply', State#state{heartbeat_ref=Reference}};
