@@ -275,7 +275,7 @@ id(JObj) ->
     id(JObj, 'undefined').
 
 id(JObj, Default) ->
-    Id = wh_json:get_first_defined([?KEY_ID, <<"id">>], JObj, Default),
+    Id = wh_json:get_first_defined([?KEY_ID, <<"id">>, [<<"value">>, <<"id">>]], JObj, Default),
     case wh_util:is_empty(Id) of
         'true' -> Default;
         'false' -> Id
