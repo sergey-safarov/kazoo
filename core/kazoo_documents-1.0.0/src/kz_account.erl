@@ -19,7 +19,7 @@
          ,is_enabled/1, enable/1, disable/1
          ,api_key/1, set_api_key/2
          ,is_superduper_admin/1
-         ,allow_number_additions/1
+         ,allow_number_additions/1, set_allow_number_additions/2
 
          ,trial_expiration/1, trial_expiration/2, set_trial_expiration/2
          ,trial_time_left/1, trial_time_left/2
@@ -162,8 +162,12 @@ is_superduper_admin(JObj) ->
 allow_number_additions(JObj) ->
     wh_json:is_true(?ALLOW_NUMBER_ADDITIONS, JObj).
 
+-spec set_allow_number_additions(doc(), boolean()) -> doc().
+set_allow_number_additions(JObj, IsAllowed) ->
+    wh_json:set_value(?ALLOW_NUMBER_ADDITIONS, wh_util:is_true(IsAllowed), JObj).
+
 -spec fetch(api_binary()) -> {'ok', doc()} |
-                            {'error', _}.
+                             {'error', _}.
 fetch('undefined') ->
     {'error', 'invalid_db_name'};
 fetch(<<_/binary>> = Account) ->
