@@ -472,7 +472,7 @@ handle_info({'heartbeat', Ref}, #state{heartbeat_ref=Ref
     try create_node(Heartbeat, State) of
         Node ->
             _ = ets:insert(Tab, Node),
-            wapi_nodes:publish_advertise(advertise_payload(Node))
+            wh_amqp_worker:cast(advertise_payload(Node), fun wapi_nodes:publish_advertise/1)
     catch
         _E:_N -> lager:debug("error creating node ~p : ~p", [_E, _N])
     end,
