@@ -46,6 +46,7 @@ reconcile_cdr(_, _) -> 'ok'.
 calls_at_limit(Limits) ->
     Limit =  j5_limits:calls(Limits),
     Used = j5_channels:total_calls(j5_limits:account_id(Limits)),
+    lager:debug(">>> Used = ~p", [Used]),
     should_deny(Limit, Used).
 
 %%--------------------------------------------------------------------
