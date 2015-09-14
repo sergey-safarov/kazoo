@@ -84,6 +84,7 @@
 %% Types
 -export_type([get_results_return/0
               ,couchbeam_error/0
+              ,couchbeam_errors/0
              ]).
 
 -include_lib("wh_couch.hrl").
