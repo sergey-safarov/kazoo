@@ -13,6 +13,7 @@
 *.dump
 core/*/test/*.beam
 core/*/test/*.app
+core/*/test/*.html
 deps/*/test
 applications/*/test/*.beam
 applications/*/test/*.app
