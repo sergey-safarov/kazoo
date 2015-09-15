@@ -504,13 +504,10 @@ db_delete(DbName) ->
 %%--------------------------------------------------------------------
 -spec open_cache_doc(text(), ne_binary()) ->
                             {'ok', wh_json:object()} |
-                            couchbeam_error() |
-                            {'error', 'not_found'}.
+                            couchbeam_error().
 -spec open_cache_doc(text(), ne_binary(), wh_proplist()) ->
                             {'ok', wh_json:object()} |
-                            couchbeam_error() |
-                            {'error', 'not_found'}.
-
+                            couchbeam_error().
 open_cache_doc(DbName, DocId) ->
     open_cache_doc(DbName, DocId, []).
 
@@ -585,12 +582,10 @@ flush_cache_docs(DbName) ->
 %%--------------------------------------------------------------------
 -spec open_doc(text(), ne_binary()) ->
                       {'ok', wh_json:object()} |
-                      couchbeam_error() |
-                      {'error', 'not_found'}.
+                      couchbeam_error().
 -spec open_doc(text(), ne_binary(), wh_proplist()) ->
                       {'ok', wh_json:object()} |
-                      couchbeam_error() |
-                      {'error', 'not_found'}.
+                      couchbeam_error().
 open_doc(DbName, DocId) ->
     open_doc(DbName, DocId, []).
 
@@ -605,12 +600,10 @@ open_doc(DbName, DocId, Options) ->
 
 -spec admin_open_doc(text(), ne_binary()) ->
                             {'ok', wh_json:object()} |
-                            couchbeam_error() |
-                            {'error', 'not_found'}.
+                            couchbeam_error().
 -spec admin_open_doc(text(), ne_binary(), wh_proplist()) ->
                             {'ok', wh_json:object()} |
-                            couchbeam_error() |
-                            {'error', 'not_found'}.
+                            couchbeam_error().
 admin_open_doc(DbName, DocId) ->
     admin_open_doc(DbName, DocId, []).
 
