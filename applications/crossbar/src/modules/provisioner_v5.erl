@@ -544,7 +544,7 @@ req_headers(Token) ->
          ,{"User-Agent", wh_util:to_list(erlang:node())}
         ]).
 
--spec get_cluster_id() -> 'undefined' | string().
+-spec get_cluster_id() -> api_string().
 get_cluster_id() ->
     whapps_config:get_string(?MOD_CONFIG_CAT, <<"cluster_id">>).
 
