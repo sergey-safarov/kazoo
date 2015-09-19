@@ -30,7 +30,7 @@ init() ->
     _ = crossbar_bindings:bind(<<"*.allowed_methods.allotments">>, ?MODULE, 'allowed_methods'),
     _ = crossbar_bindings:bind(<<"*.resource_exists.allotments">>, ?MODULE, 'resource_exists'),
     _ = crossbar_bindings:bind(<<"*.validate.allotments">>, ?MODULE, 'validate'),
-   crossbar_bindings:bind(<<"*.execute.post.allotments">>, ?MODULE, 'post').
+    _ = crossbar_bindings:bind(<<"*.execute.post.allotments">>, ?MODULE, 'post').
 
 %%--------------------------------------------------------------------
 %% @public
@@ -124,19 +124,22 @@ load_consumed(Context) ->
 
 -spec foldl_consumed(api_binary(), wh_json:object(), {cb_context:context(), {'cycle', wh_datetime()} | {'manual', api_seconds(), api_seconds()} , wh_json:objects()}) ->
     {cb_context:context(), {'cycle', wh_datetime()} | {'manual', api_seconds(), api_seconds()} , wh_json:objects()}.
-foldl_consumed(_Classification, _Value, {#cb_context{resp_status='error'}=ContextErr, Mode, Acc}) -> {ContextErr, Mode, Acc};
 foldl_consumed(Classification, Value, {Context, Mode, Acc}) ->
-    case create_viewoptions(Context, Classification, Value, Mode) of
-        {Cycle, ViewOptions} ->
-            [_, From] = props:get_value('startkey', ViewOptions),
-            [_, To] = props:get_value('endkey', ViewOptions),
-            ContextResult = crossbar_doc:load_view(?LIST_CONSUMED
-                                                   ,props:insert_value({'group_level', 1},ViewOptions)
-                                                   ,Context
-                                                  ),
-            Acc1 = normalize_result(Cycle, From, To, Acc, cb_context:doc(ContextResult)),
-            {ContextResult, Mode, Acc1};
-        ContextErr -> {ContextErr, Mode, Acc}
+    case cb_context:resp_status(Context) of
+        'error' -> {Context, Mode, Acc};
+        _ ->
+            case create_viewoptions(Context, Classification, Value, Mode) of
+                {Cycle, ViewOptions} ->
+                    [_, From] = props:get_value('startkey', ViewOptions),
+                    [_, To] = props:get_value('endkey', ViewOptions),
+                    ContextResult = crossbar_doc:load_view(?LIST_CONSUMED
+                                                           ,props:insert_value({'group_level', 1},ViewOptions)
+                                                           ,Context
+                                                          ),
+                    Acc1 = normalize_result(Cycle, From, To, Acc, cb_context:doc(ContextResult)),
+                    {ContextResult, Mode, Acc1};
+                ContextErr -> {ContextErr, Mode, Acc}
+            end
     end.
 
 -spec normalize_result(api_binary(), gregorian_seconds(), gregorian_seconds(), wh_json:object(), wh_json:objects()) -> wh_json:object().
