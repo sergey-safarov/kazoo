@@ -267,6 +267,16 @@ pre_exec(DP, _Node, _UUID, _Channel, _JObj) ->
                                   ,"="
                                   ,"${", ?CHANNEL_VAR_PREFIX, ?CALL_INTERACTION_ID, "}"
                                   ])}
+    ,{"application", lists:concat(["export "
+                                  ,?CHANNEL_VAR_PREFIX, ?CALL_CORRELATION_ID
+                                  ,"="
+                                  ,"${", ?CHANNEL_VAR_PREFIX, ?CALL_CORRELATION_ID, "}"
+                                  ])}
+    ,{"application", lists:concat(["export nolocal:sip_h_X-"
+                                  ,?CHANNEL_VAR_PREFIX, ?CALL_CORRELATION_ID
+                                  ,"="
+                                  ,"${", ?CHANNEL_VAR_PREFIX, ?CALL_CORRELATION_ID, "}"
+                                  ])} 
      |DP
     ].
 

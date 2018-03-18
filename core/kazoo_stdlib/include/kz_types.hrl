@@ -79,6 +79,7 @@
         ]).
 
 -define(CHANNEL_LOOPBACK_HEADER_PREFIX, "Export-Loopback-").
+-define(CALL_CORRELATION_ID, "Call-Correlation-ID").
 -define(CALL_INTERACTION_ID, "Call-Interaction-ID").
 -define(CALL_INTERACTION_DEFAULT
        ,list_to_binary([kz_term:to_binary(kz_time:now_s())
