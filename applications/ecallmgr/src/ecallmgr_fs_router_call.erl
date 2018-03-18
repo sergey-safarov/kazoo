@@ -106,7 +106,7 @@ handle_info({'route', Section, <<"REQUEST_PARAMS">>, _SubClass, _Context, FSId, 
            ) ->
     lager:info("process route request for fetch id ~s (uuid ~s)", [FSId, CallId]),
 
-    Props = interaction_props(Node, CallId, FSData),
+    Props = interaction_props(Node, CallId, FSData) ++ correlation_props(Node, CallId, FSData),
     _ = kz_util:spawn(fun process_route_req/5, [Section, Node, FSId, CallId, FSData ++ Props]),
     {'noreply', State};
 handle_info({'EXIT', _, 'noconnection'}, State) ->
@@ -125,6 +125,16 @@ interaction_props(Node, CallId, FSData) ->
             kz_util:spawn(fun ecallmgr_fs_command:set/3, [Node, CallId, [{<<?CALL_INTERACTION_ID>>, InterActionId}]]),
             [{?GET_CCV(<<?CALL_INTERACTION_ID>>), InterActionId}];
         _InterActionId -> []
+    end.
+
+-spec correlation_props(atom(), kz_term:ne_binary(), kz_term:proplist()) -> kz_term:proplist().
+correlation_props(Node, CallId, FSData) ->
+    case props:get_value(?GET_CCV_HEADER(<<?CALL_CORRELATION_ID>>), FSData) of
+        'undefined' ->
+            CorrelationId = props:get_value(?GET_CUSTOM_HEADER(<<"Call-Correlation-ID">>), FSData, ?CALL_INTERACTION_DEFAULT),
+            kz_util:spawn(fun ecallmgr_fs_command:set/3, [Node, CallId, [{<<?CALL_CORRELATION_ID>>, CorrelationId}]]),
+            [{?GET_CCV(<<?CALL_CORRELATION_ID>>), CorrelationId}];
+        _CorrelationId -> []
     end.
 
 %%------------------------------------------------------------------------------
