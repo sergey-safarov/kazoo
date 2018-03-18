@@ -230,6 +230,7 @@ to_props(Channel) ->
       ,{<<"from_tag">>, Channel#channel.from_tag}
       ,{<<"handling_locally">>, Channel#channel.handling_locally}
       ,{<<"interaction_id">>, Channel#channel.interaction_id}
+      ,{<<"correlation_id">>, Channel#channel.correlation_id}
       ,{<<"is_loopback">>, Channel#channel.is_loopback}
       ,{<<"is_onhold">>, Channel#channel.is_onhold}
       ,{<<"loopback_leg_name">>, Channel#channel.loopback_leg_name}
@@ -296,6 +297,7 @@ to_api_props(#channel{}=Channel) ->
       ,{<<"To-Tag">>, Channel#channel.to_tag}
       ,{<<"Username">>, Channel#channel.username}
       ,{<<?CALL_INTERACTION_ID>>, Channel#channel.interaction_id}
+      ,{<<?CALL_CORRELATION_ID>>, Channel#channel.correlation_id}
       ]);
 to_api_props(?NE_BINARY=CallId) ->
     {'ok', #channel{}=Channel} = fetch(CallId, 'record'),
@@ -320,6 +322,7 @@ channel_ccvs(#channel{}=Channel) ->
       ,{<<"Realm">>, Channel#channel.realm}
       ,{<<"Username">>, Channel#channel.username}
       ,{<<?CALL_INTERACTION_ID>>, Channel#channel.interaction_id}
+      ,{<<?CALL_CORRELATION_ID>>, Channel#channel.correlation_id}
       ,{<<"CallFlow-ID">>, Channel#channel.callflow_id}
       ]);
 channel_ccvs([_|_]=Props) ->
@@ -340,6 +343,7 @@ channel_ccvs([_|_]=Props) ->
       ,{<<"Realm">>, props:get_value(<<"realm">>, Props)}
       ,{<<"Username">>, props:get_value(<<"username">>, Props)}
       ,{<<?CALL_INTERACTION_ID>>, props:get_value(<<"interaction_id">>, Props)}
+      ,{<<?CALL_CORRELATION_ID>>, props:get_value(<<"correlation_id">>, Props)}
       ,{<<"callflow_id">>, props:get_value(<<"callflow_id">>, Props)}
       ]);
 channel_ccvs(JObj) ->
@@ -532,6 +536,7 @@ channel_resp_dialprefix(ReqProps, Channel, ChannelVars) ->
               ,{<<"sip_h_X-ecallmgr_refer-for-channel-id">>, props:get_value(<<"refer-for-channel-id">>, ReqProps)}
               ,{<<"sip_h_X-ecallmgr_Account-ID">>, props:get_value(<<"Account-ID">>, ChannelVars)}
               ,{<<"sip_h_X-ecallmgr_Realm">>, props:get_value(<<"Realm">>, ChannelVars)}
+              ,{<<"sip_h_X-", ?CALL_CORRELATION_ID>>, props:get_value(<<"correlation_id">>, Channel)}
               ]),
     fs_props_to_binary(Props).
 
@@ -709,6 +714,7 @@ props_to_record(Props, Node) ->
             ,to_tag=props:get_value(<<"variable_sip_to_tag">>, Props)
             ,from_tag=props:get_value(<<"variable_sip_from_tag">>, Props)
             ,interaction_id=props:get_value(<<?CALL_INTERACTION_ID>>, CCVs)
+            ,correlation_id=props:get_value(<<?CALL_CORRELATION_ID>>, CCVs)
             ,is_loopback=kzd_freeswitch:is_loopback(Props)
             ,loopback_leg_name=kzd_freeswitch:loopback_leg_name(Props)
             ,loopback_other_leg=kzd_freeswitch:loopback_other_leg(Props)
@@ -791,6 +797,7 @@ props_to_update(Props) ->
       ,{#channel.to_tag, props:get_value(<<"variable_sip_to_tag">>, Props)}
       ,{#channel.from_tag, props:get_value(<<"variable_sip_from_tag">>, Props)}
       ,{#channel.interaction_id, props:get_value(<<?CALL_INTERACTION_ID>>, CCVs)}
+      ,{#channel.correlation_id, props:get_value(<<?CALL_CORRELATION_ID>>, CCVs)}
       ,{#channel.is_loopback, kzd_freeswitch:is_loopback(Props)}
       ,{#channel.loopback_leg_name, kzd_freeswitch:loopback_leg_name(Props)}
       ,{#channel.loopback_other_leg, kzd_freeswitch:loopback_other_leg(Props)}

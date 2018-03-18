@@ -495,6 +495,7 @@ maybe_save_recording(_Pid, EndpointId, JObj) ->
     CdrId = ?MATCH_MODB_PREFIX(kz_term:to_binary(Year), kz_date:pad_month(Month), CallId),
     DocId = kz_call_event:custom_channel_var(JObj, <<"Media-Recording-ID">>),
     InteractionId = kz_call_event:custom_channel_var(JObj, <<?CALL_INTERACTION_ID>>),
+    CorrelationId = kz_call_event:custom_channel_var(JObj, <<?CALL_CORRELATION_ID>>),
     Url = kz_json:get_ne_binary_value(<<"url">>, Data),
     ShouldStore = should_store_recording(AccountId, Url),
     Verb = kz_json:get_atom_value(<<"method">>, Data, 'put'),
@@ -506,6 +507,7 @@ maybe_save_recording(_Pid, EndpointId, JObj) ->
              ,doc_db => AccountDb
              ,cdr_id => CdrId
              ,interaction_id => InteractionId
+             ,correlation_id => CorrelationId
              ,should_store => ShouldStore
              ,retries => ?STORAGE_RETRY_TIMES(AccountId)
              ,verb => Verb

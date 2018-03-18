@@ -81,6 +81,8 @@
           ,"-", (kz_binary:rand_hex(4))/binary
         >>).
 
+-define(CALL_CORRELATION_ID, "CID").
+
 -define(BRIDGE_DEFAULT_SYSTEM_TIMEOUT_S, 20).
 
 

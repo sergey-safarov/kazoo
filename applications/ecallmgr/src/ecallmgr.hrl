@@ -92,6 +92,7 @@
                  ,to_tag :: kz_term:api_binary() | '_'
                  ,from_tag :: kz_term:api_binary() | '_'
                  ,interaction_id :: kz_term:api_binary() | '$5' | '_'
+                 ,correlation_id :: kz_term:api_binary() | '$5' | '_'
                  ,callee_number :: kz_term:api_binary() | '$5' | '_'
                  ,callee_name :: kz_term:api_binary() | '$5' | '_'
                  ,is_loopback :: boolean() | '_'
