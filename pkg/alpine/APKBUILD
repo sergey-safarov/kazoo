@@ -1,0 +1,67 @@
+# Maintainer: Sergey Safarov <s.safarov@gmail.com>
+pkgname=kazoo
+pkgver=4.1.38
+pkgrel=0
+
+# If building from a git snapshot, specify the gitcommit
+# If building a proper release, leave gitcommit blank
+_gitcommit=bde5ffcedda5eb60bed47f023e8b1c78f99ab550
+
+[ ! -z "${_gitcommit}" ] && pkgver="${pkgver}.$(date +%Y%m%d)"
+[ ! -z "${_gitcommit}" ] && _suffix="-${_gitcommit:0:7}"
+[ ! -z "${_gitcommit}" ] && builddir="$srcdir/$pkgname-$_gitcommit" || builddir="$srcdir/$pkgname-$pkgver"
+[ -z "${_gitcommit}" ] && _gitcommit="${pkgver}"
+
+pkgdesc="Open Source VoIP platform"
+url="https://2600hz.com/"
+arch="all"
+pkgusers="kazoo"
+pkggroups="daemon"
+arch="all"
+license="GPL2+"
+options="!fhs"
+depends="libressl2.5-libcrypto expat libgcc ncurses-libs libstdc++ zlib musl-utils ghostscript tiff-tools fontconfig imagemagick"
+makedepends="wget bash python2 gcc expat-dev libressl-dev erlang erlang-dev erlang-parsetools erlang-tools erlang-crypto erlang-syntax-tools erlang-ssl erlang-eunit erlang-hipe erlang-public-key erlang-asn1 erlang-inets erlang-xmerl erlang-observer erlang-sasl erlang-debugger erlang-runtime-tools erlang-snmp erlang-wx grep"
+
+source="${pkgname}-${pkgver}${_suffix}.tar.gz::https://github.com/sergey-safarov/$pkgname/archive/$_gitcommit.tar.gz
+"
+
+snapshot() {
+    if [ ! -f "$SRCDEST"/${pkgname}-${pkgver}${_suffix}.tar.gz ]; then
+        wget -O "$SRCDEST"/${pkgname}-${pkgver}${_suffix}.tar.gz https://github.com/sergey-safarov/$pkgname/archive/$_gitcommit.tar.gz
+    fi
+    SHA512SUM=$(sha512sum "$SRCDEST"/${pkgname}-${pkgver}${_suffix}.tar.gz | sed -e "s:$SRCDEST/::")
+    sed -i -e "s/^\(sha512sums=.\).*/\1$SHA512SUM/" APKBUILD
+}
+
+prepare() {
+    default_prepare
+    cd "$builddir"
+    make deps/Makefile
+    # 'fetch-deps' targed is not supports multi thereated build
+    make -j 1 -C deps fetch-deps
+
+    # iconf on Alpine Linux not support `//IGNORE` encodings
+    sed -i -e 's:utf-8//IGNORE:utf-8:' -e 's:UTF-8//IGNORE:UTF-8:' deps/gen_smtp/src/mimemail.erl
+}
+
+build() {
+    cd "$builddir"
+    make deps
+    make core
+    make apps
+    make
+    make build-release
+    make sup_completion
+}
+
+package() {
+    cd "$builddir"
+    mkdir -p $pkgdir/opt
+    cp -R _rel/kazoo $pkgdir/opt
+    cp sup.bash $pkgdir/opt/kazoo
+    mkdir $pkgdir/opt/kazoo/logs
+}
+
+sha512sums="afe13db7d64a2178f66690e7d71f8b338120978e2941c917b70477317a2ffb45a2ae4f4f25189df6173cb9c373f08a6dda75c13283bd795f305972c528ca08cf  kazoo-4.1.19.20171025-bde5ffc.tar.gz
+"
