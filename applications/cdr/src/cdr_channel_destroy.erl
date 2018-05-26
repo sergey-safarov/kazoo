@@ -90,6 +90,7 @@ prepare_and_save(AccountId, Timestamp, JObj) ->
                ,fun maybe_set_e164_destination/3
                ,fun is_conference/3
                ,fun set_interaction/3
+               ,fun set_correlation/3
                ,fun update_pvt_parameters/3 %% due to interaction-timestamp MUST be called LAST
                ,fun save_cdr/3
                ],
@@ -199,6 +200,25 @@ set_interaction(_AccountId, _Timestamp, JObj) ->
                        ,{<<"Interaction-Id">>, Interaction}
                        ]
                       ,kz_json:delete_key(?CCV(<<?CALL_INTERACTION_ID>>), kz_doc:set_id(JObj, DocId))
+                      ).
+
+-spec set_correlation(kz_term:api_binary(), kz_time:gregorian_seconds(), kz_call_event:doc()) ->
+                             kz_json:object().
+set_correlation(_AccountId, _Timestamp, JObj) ->
+
+    %% See {@link prepare_and_save/3} for an edge case for Timestamp
+
+    Correlation = kz_call_event:custom_channel_var(JObj, <<?CALL_CORRELATION_ID>>, ?CALL_INTERACTION_DEFAULT),
+    <<Time:11/binary, "-", Key/binary>> = Correlation,
+    Timestamp = kz_term:to_integer(Time),
+    CallId = kz_call_event:call_id(JObj),
+    DocId = cdr_util:get_cdr_doc_id(Timestamp, CallId),
+
+    kz_json:set_values([{<<"Correlation-Time">>, Timestamp}
+                       ,{<<"Correlation-Key">>, Key}
+                       ,{<<"Correlation-Id">>, Correlation}
+                       ]
+                      ,kz_json:delete_key(?CCV(<<?CALL_CORRELATION_ID>>), kz_doc:set_id(JObj, DocId))
                       ).
 
 -spec save_cdr(kz_term:api_ne_binary(), kz_time:gregorian_seconds(), kz_call_event:doc()) ->
