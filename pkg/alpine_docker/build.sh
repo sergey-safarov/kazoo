@@ -45,7 +45,7 @@ build_and_install(){
 kazoo_files() {
     local PACKAGES
     PACKAGES=$(apk info | grep kazoo)
-    PACKAGES="musl ghostscript fontconfig imagemagick $PACKAGES"
+    PACKAGES="musl bash ghostscript fontconfig imagemagick $PACKAGES"
     for pkg in $PACKAGES
     do
         # list package files and filter package name
@@ -60,6 +60,7 @@ extra_files() {
 /bin/busybox
 /usr/bin
 /usr/bin/iconv
+/usr/bin/ldd
 /usr/bin/tiff2pdf
 /usr/bin/tiffinfo
 /usr/lib
