@@ -38,6 +38,7 @@
 
 -define(CB_LIST, <<"cdrs/crossbar_listing">>).
 -define(CB_LIST_BY_USER, <<"cdrs/listing_by_owner">>).
+-define(CB_CORRELATION_LIST_BY_ID, <<"interactions/correlation_listing_by_id">>).
 -define(CB_INTERACTION_LIST, <<"interactions/interaction_listing">>).
 -define(CB_INTERACTION_LIST_BY_USER, <<"interactions/interaction_listing_by_owner">>).
 -define(CB_INTERACTION_LIST_BY_ID, <<"interactions/interaction_listing_by_id">>).
@@ -46,6 +47,7 @@
 
 -define(PATH_INTERACTION, <<"interaction">>).
 -define(PATH_LEGS, <<"legs">>).
+-define(PATH_LEGS_EXT, <<"legs-ext">>).
 -define(PATH_SUMMARY, <<"summary">>).
 
 -define(KEY_UTC_OFFSET, <<"utc_offset">>).
@@ -163,6 +165,8 @@ allowed_methods(_CDRId) ->
 
 -spec allowed_methods(path_token(), path_token()) -> http_methods().
 allowed_methods(?PATH_LEGS, _InteractionId) ->
+    [?HTTP_GET];
+allowed_methods(?PATH_LEGS_EXT, _CorrelationId) ->
     [?HTTP_GET].
 
 %%------------------------------------------------------------------------------
@@ -179,6 +183,7 @@ resource_exists(_) -> 'true'.
 
 -spec resource_exists(path_token(), path_token()) -> boolean().
 resource_exists(?PATH_LEGS, _) -> 'true';
+resource_exists(?PATH_LEGS_EXT, _) -> 'true';
 resource_exists(_, _) -> 'false'.
 
 %%------------------------------------------------------------------------------
@@ -227,6 +232,8 @@ validate(Context, CDRId) ->
 -spec validate(cb_context:context(), path_token(), path_token()) -> cb_context:context().
 validate(Context, ?PATH_LEGS, InteractionId) ->
     load_legs(InteractionId, Context);
+validate(Context, ?PATH_LEGS_EXT, CorrelationId) ->
+    load_legs_ext(CorrelationId, Context);
 validate(Context, _, _) ->
     lager:debug("invalid URL chain for cdr request"),
     cb_context:add_system_error('faulty_request', Context).
@@ -677,6 +684,33 @@ load_legs(<<BinTimestamp:11/binary, "-", _Key/binary>>=InteractionId, Context) -
     crossbar_view:load_modb(Context, ?CB_INTERACTION_LIST_BY_ID, Options);
 load_legs(Id, Context) ->
     crossbar_util:response_bad_identifier(Id, Context).
+
+%%------------------------------------------------------------------------------
+%% @doc Load Legs for a cdr correlation from the database
+%% @end
+%%------------------------------------------------------------------------------
+-spec load_legs_ext(kz_term:ne_binary(), cb_context:context()) -> cb_context:context().
+load_legs_ext(<<Year:4/binary, Month:2/binary, "-", _/binary>> = DocId, Context) ->
+    AccountId = cb_context:account_id(Context),
+    AccountDb = kazoo_modb:get_modb(AccountId, kz_term:to_integer(Year), kz_term:to_integer(Month)),
+    Context1 = cb_context:set_account_db(Context, AccountDb),
+    case kz_datamgr:open_doc(AccountDb, {<<"cdr">>, DocId}) of
+        {'ok', JObj} ->
+            load_legs_ext(kz_json:get_value(<<"correlation_id">>, JObj), Context1);
+        _ ->
+            lager:debug("error loading legs for cdr id ~p", [DocId]),
+            crossbar_util:response('error', <<"could not find legs for supplied id">>, 404, Context1)
+    end;
+load_legs_ext(CorrelationId, Context) ->
+    Options = ['include_docs'
+              ,{'startkey', [CorrelationId]}
+              ,{'endkey', [CorrelationId, kz_json:new()]}
+              ],
+    crossbar_doc:load_view(?CB_CORRELATION_LIST_BY_ID
+                          ,Options
+                          ,Context
+                          ,fun normalize_leg_view_results/2
+                          ).
 
 -spec normalize_leg_view_results(kz_json:object(), kz_json:objects()) ->
           kz_json:objects().
