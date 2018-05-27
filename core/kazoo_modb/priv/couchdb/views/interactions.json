@@ -9,6 +9,14 @@
     },
     "language": "javascript",
     "views": {
+        "correlation_listing_by_id": {
+            "map": [
+                "function(doc) {",
+                "  if (doc.pvt_type != 'cdr' || doc.pvt_deleted) return;",
+                "  emit([doc.correlation_id, doc.channel_created_time], null)",
+                "}"
+            ]
+        },
         "interaction_listing": {
             "map": [
                 "function(doc) {",
