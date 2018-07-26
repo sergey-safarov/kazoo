@@ -425,6 +425,8 @@ error_must_validate_settings(Context) ->
 -spec validate_attachments_settings(kz_json:object()
                                    ,cb_context:context()
                                    ) -> cb_context:context().
+validate_attachments_settings('undefined', Context) ->
+    kz_json:foldl(fun validate_attachment_settings_fold/3, Context, kz_json:new());
 validate_attachments_settings(Attachments, Context) ->
     kz_json:foldl(fun validate_attachment_settings_fold/3, Context, Attachments).
 
