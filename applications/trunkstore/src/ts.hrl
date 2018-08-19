@@ -15,6 +15,7 @@
 
 %% Account views
 -define(TS_VIEW_DIDLOOKUP, <<"trunkstore/lookup_did">>).
+-define(TS_VIEW_CROSSBAR_LISTING, <<"trunkstore/crossbar_listing">>).
 
 %% just want to deal with binary K/V pairs
 -type active_calls() :: [{binary(), 'flat_rate' | 'per_min'}].
