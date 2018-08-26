@@ -10,6 +10,7 @@ export ERL_LIBS="$ERL_LIBS":$ROOT/deps:$ROOT/core:$ROOT/applications:$(echo $ROO
 NODE_NAME=${1:-kazoo_apps}
 
 exec erl \
+     -smp \
      -name $NODE_NAME \
      -args_file $ROOT/rel/dev.vm.args \
      -config $ROOT/rel/sys.config \
