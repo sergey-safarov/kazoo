@@ -25,6 +25,9 @@
 -export([save_sms/1, save_sms/2]).
 -export([replay_sms/2]).
 -export([get_sms_body/1, set_sms_body/2]).
+-export([get_sms_media_urls/1, set_sms_media_urls/2]).
+-export([get_sms_smil/1, set_sms_smil/2]).
+-export([get_sms_subject/1, set_sms_subject/2]).
 -export([set_flow_status/2, set_flow_status/3]).
 -export([set_flow_error/2, set_flow_error/3, clear_flow_error/1]).
 -export([handle_bridge_failure/2, handle_bridge_failure/3]).
@@ -51,6 +54,30 @@ set_sms_body(Body, Call) ->
 -spec get_sms_body(kapps_call:call()) -> kz_term:ne_binary().
 get_sms_body(Call) ->
     kapps_call:kvs_fetch(<<"Body">>, Call).
+
+-spec set_sms_media_urls(kz_term:ne_binary(), kapps_call:call()) -> kapps_call:call().
+set_sms_media_urls(MediaUrls, Call) ->
+    kapps_call:kvs_store(<<"MediaUrls">>, MediaUrls, Call).
+
+-spec get_sms_media_urls(kapps_call:call()) -> kz_term:ne_binary().
+get_sms_media_urls(Call) ->
+    kapps_call:kvs_fetch(<<"MediaUrls">>, Call).
+
+-spec set_sms_smil(kz_term:ne_binary(), kapps_call:call()) -> kapps_call:call().
+set_sms_smil(SMIL, Call) ->
+    kapps_call:kvs_store(<<"SMIL">>, SMIL, Call).
+
+-spec get_sms_smil(kapps_call:call()) -> kz_term:ne_binary().
+get_sms_smil(Call) ->
+    kapps_call:kvs_fetch(<<"SMIL">>, Call).
+
+-spec set_sms_subject(kz_term:ne_binary(), kapps_call:call()) -> kapps_call:call().
+set_sms_subject(Subject, Call) ->
+    kapps_call:kvs_store(<<"Subject">>, Subject, Call).
+
+-spec get_sms_subject(kapps_call:call()) -> kz_term:ne_binary().
+get_sms_subject(Call) ->
+    kapps_call:kvs_fetch(<<"Subject">>, Call).
 
 -spec set_flow_status(kz_term:ne_binary() | {binary(), binary()}, kapps_call:call()) -> kapps_call:call().
 set_flow_status({Status, Message}, Call) ->
@@ -138,7 +165,13 @@ save_sms(JObj, ?MATCH_MODB_PREFIX(Year,Month,_) = DocId, Doc, Call) ->
     AuthType = kapps_call:authorizing_type(Call),
     AuthId = kapps_call:authorizing_id(Call),
     Body = get_sms_body(Call),
-    Bits = bit_size(Body),
+    MediaUrls = get_sms_media_urls(Call),
+    SMIL = get_sms_smil(Call),
+    Subject = get_sms_subject(Call),
+    Bits = case Body of
+              'undefined' -> 'undefined';
+               _ -> bit_size(Body)
+           end,
     To = kapps_call:to(Call),
     From = kapps_call:from(Call),
     Request = kapps_call:request(Call),
@@ -175,6 +208,9 @@ save_sms(JObj, ?MATCH_MODB_PREFIX(Year,Month,_) = DocId, Doc, Call) ->
               ,{<<"request">>, Request}
               ,{<<"request_user">>, RequestUser}
               ,{<<"request_realm">>, RequestRealm}
+              ,{<<"media_urls">>, MediaUrls}
+              ,{<<"smil">>, SMIL}
+              ,{<<"subject">>, Subject}
               ,{<<"body">>, Body}
               ,{<<"bits">>, Bits}
               ,{<<"message_id">>, MessageId}

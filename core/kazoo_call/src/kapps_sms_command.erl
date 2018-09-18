@@ -252,15 +252,64 @@ create_sms(Call) ->
                    ]),
     [{<<"Message-ID">>, kapps_call:kvs_fetch(<<"Message-ID">>, Call)}
     ,{<<"Call-ID">>, kapps_call:call_id(Call)}
-    ,{<<"Body">>, kapps_call:kvs_fetch(<<"Body">>, Call)}
     ,{<<"From">>, kapps_call:from(Call)}
     ,{<<"Caller-ID-Number">>, kapps_call:caller_id_number(Call)}
+    ,{<<"Subject">>, kapps_call:kvs_fetch(<<"Subject">>, Call)}
     ,{<<"To">>, kapps_call:to(Call)}
     ,{<<"Request">>, kapps_call:request(Call) }
     ,{<<"Application-Name">>, <<"send">>}
     ,{<<"Custom-Channel-Vars">>, kz_json:set_values(CCVUpdates, kz_json:new())}
      | kz_api:default_headers(kapps_call:controller_queue(Call), ?APP_NAME, ?APP_VERSION)
+    ] ++ create_sms_content_headers(Call).
+
+-spec create_sms_content_headers(kapps_call:call()) -> kz_term:api_binary().
+create_sms_content_headers(Call) ->
+    Body = kapps_call:kvs_fetch(<<"Body">>, Call),
+    MediaUrls = kz_json:to_proplist(kapps_call:kvs_fetch(<<"MediaUrls">>, Call)),
+    SMIL = kapps_call:kvs_fetch(<<"SMIL">>, Call),
+    [{<<"Body">>, create_sms_body(Body, MediaUrls, SMIL)}
+    ,{<<"Content-Type">>, create_sms_content_type(Body, MediaUrls, SMIL, Call)}
     ].
+
+-spec create_sms_content_type(kz_term:api_binary(), kz_term:api_list(), kz_term:api_binary(), kapps_call:call()) -> kz_term:api_binary().
+create_sms_content_type('undefined', 'undefined', 'undefined', Call) ->
+    kapps_call:kvs_fetch(<<"Content-Type">>, Call, <<"text/plain">>);
+create_sms_content_type(_Body, 'undefined', 'undefined', _Call) ->
+    <<"text/plain">>;
+create_sms_content_type('undefined', [_Attachment], 'undefined', _Call) ->
+    <<"application/vnd.gsma.rcs-ft-http+xml">>;
+create_sms_content_type('undefined', [_Attachment|_Attachments], 'undefined', _Call) ->
+%%    <<"multipart/mixed; boundary=ngaBoundary">>;
+    <<"text/plain">>;
+create_sms_content_type('undefined', 'undefined', _SMIL, _Call) ->
+    <<"application/smil">>.
+
+-spec create_sms_body(kz_term:api_binary(), kz_term:api_list(), kz_term:api_binary()) -> kz_term:api_binary().
+create_sms_body(Body, 'undefined', 'undefined') ->
+    Body;
+create_sms_body('undefined', [Attachment], 'undefined') ->
+    create_sms_body_of_attachment(Attachment, <<"application/vnd.gsma.rcs-ft-http+xml">>);
+create_sms_body('undefined', [_Attachment|_Attachments], 'undefined') ->
+    <<"We cannot send multyple attachment">>;
+create_sms_body('undefined', 'undefined', SMIL) ->
+    SMIL;
+create_sms_body(_Body, _MediaUrls, _SMIL) ->
+    <<"We now not supports complex MMS">>.
+
+-spec create_sms_body_of_attachment({kz_term:api_binary(), kz_term:api_binary()}, kz_term:api_binary()) -> kz_term:api_binary().
+create_sms_body_of_attachment([{_Type, URL}],  <<"application/vnd.gsma.rcs-ft-http+xml">>) ->
+%% This is Linphone attacments format
+<<"<?xml version=\"1.0\" encoding=\"UTF-8\"?><file xmlns=\"urn:gsma:params:xml:ns:rcs:rcs:fthttp\">
+    <file-info type=\"file\">
+        <file-size>290683</file-size>
+        <file-name>IMG-20180913-WA0004.jpg</file-name>
+        <content-type>image/jpg</content-type>
+        <data url=\"", URL/binary, "\" until=\"2018-09-25T14:07:36Z\"/>
+    </file-info>
+</file>">>;
+create_sms_body_of_attachment([{_Type, _URL}],  _ContentType) ->
+    <<"Unsuported attacments format">>.
+
 
 -spec create_sms_endpoints(kz_json:objects(), kz_json:objects()) -> kz_json:objects().
 create_sms_endpoints([], Endpoints) -> Endpoints;

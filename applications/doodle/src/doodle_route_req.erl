@@ -155,5 +155,5 @@ cache_resource_types(Flow, Call, JObj) ->
 
 -spec cache_resource_types(kz_term:ne_binary(), kz_json:object(), kapps_call:call(), kz_json:object()) -> kz_term:ne_binaries().
 cache_resource_types(<<"sms">>, _Flow, _Call, _JObj) ->
-    [<<"Message-ID">>, <<"Body">>];
+    [<<"Message-ID">>, <<"Body">>, <<"MediaUrls">>, <<"SMIL">>, <<"Subject">>];
 cache_resource_types(_Other, _Flow, _Call, _JObj) -> [].

@@ -33,6 +33,7 @@
                                     ,<<"Geo-Location">>
                                     ,<<"Max-Call-Length">>
                                     ,<<"Media">>
+                                    ,<<"MediaUrls">>
                                     ,<<"Message-ID">>
                                     ,<<"Orig-IP">>
                                     ,<<"Orig-Port">>
@@ -41,6 +42,8 @@
                                     ,<<"Resource-Type">>
                                     ,<<"Ringback-Media">>
                                     ,<<"SIP-Request-Host">>
+                                    ,<<"SMIL">>
+                                    ,<<"Subject">>
                                     ,<<"Switch-Hostname">>
                                     ,<<"Switch-Nodename">>
                                     ,<<"Switch-URI">>
@@ -63,7 +66,8 @@
                                ,<<"Min-Increment-Cost">>
                                ,<<"Min-Setup-Cost">>
                                ]).
--define(ROUTE_REQ_TYPES, [{<<"Caller-ID-Name">>, fun erlang:is_binary/1}
+-define(ROUTE_REQ_TYPES, [{<<"Body">>, fun erlang:is_binary/1}
+                         ,{<<"Caller-ID-Name">>, fun erlang:is_binary/1}
                          ,{<<"Caller-ID-Number">>, fun erlang:is_binary/1}
                          ,{<<"Cost-Parameters">>, fun has_cost_parameters/1}
                          ,{<<"Custom-Application-Vars">>, fun kz_json:is_json_object/1}
@@ -71,7 +75,10 @@
                          ,{<<"Custom-SIP-Headers">>, fun kz_json:is_json_object/1}
                          ,{<<"Event-Queue">>, fun erlang:is_binary/1}
                          ,{<<"From">>, fun erlang:is_binary/1}
+                         ,{<<"MediaUrls">>, fun erlang:is_list/1}
                          ,{<<"Request">>, fun erlang:is_binary/1}
+                         ,{<<"SMIL">>, fun erlang:is_binary/1}
+                         ,{<<"Subject">>, fun erlang:is_binary/1}
                          ,{<<"To">>, fun erlang:is_binary/1}
                          ,{?KEY_CALL_ID, fun erlang:is_binary/1}
                          ]).

@@ -30,7 +30,7 @@
 -define(EVENT_CATEGORY, <<"message">>).
 
 -define(SMS_REQ_EVENT_NAME, <<"route">>).
--define(SMS_REQ_HEADERS, [<<"Call-ID">>, <<"Endpoints">>, <<"Application-Name">>, <<"Body">>]).
+-define(SMS_REQ_HEADERS, [<<"Call-ID">>, <<"Endpoints">>, <<"Application-Name">>, <<"Content-Type">>]).
 -define(OPTIONAL_SMS_REQ_HEADERS
        ,[<<"Timeout">>, <<"Continue-On-Fail">>, <<"Ignore-Early-Media">>
         ,<<"Application-Data">>, <<"Message-ID">>
@@ -44,6 +44,7 @@
         ,<<"Custom-Channel-Vars">>, <<"Custom-SIP-Headers">>
         ,<<"SIP-Transport">>, <<"SIP-Headers">>
         ,<<"Route-ID">>, <<"Route-Type">>
+        ,<<"Subject">>, <<"Body">>
              | kapi_dialplan:optional_bridge_req_headers()
         ]).
 -define(SMS_REQ_VALUES, [{<<"Event-Category">>, ?EVENT_CATEGORY}
@@ -60,6 +61,8 @@
                        ,{<<"Continue-On-Fail">>, fun kz_term:is_boolean/1}
                        ,{<<"Message-ID">>, fun is_binary/1}
                        ,{<<"Body">>, fun is_binary/1}
+                       ,{<<"Subject">>, fun is_binary/1}
+                       ,{<<"Content-Type">>, fun is_binary/1}
                        ]).
 -define(SMS_ROUTING_KEY(RouteId, CallId)
        ,list_to_binary(["message.route."
