@@ -7,7 +7,9 @@
 %%%-----------------------------------------------------------------------------
 -module(kz_network_utils).
 
--export([get_hostname/0]).
+-export([get_hostname/0
+        ,getaddrs/1
+        ]).
 -export([default_binding_ip/0
         ,get_supported_binding_ip/0, get_supported_binding_ip/1, get_supported_binding_ip/2
         ,detect_ip_family/1
@@ -95,6 +97,18 @@ get_hostname() ->
     {'ok', Host} = inet:gethostname(),
     {'ok', #hostent{h_name=Hostname}} = inet:gethostbyname(Host),
     Hostname.
+
+-spec getaddrs(kz_term:text()) -> string().
+getaddrs(Host) ->
+    IPv6 = case inet:getaddrs(Host,'inet6') of
+                {'ok', IPv6List} -> IPv6List;
+                {'error', _} -> []
+           end,
+    IPv4 = case inet:getaddrs(Host,'inet') of
+                {'ok', IPv4List} -> IPv4List;
+                {'error', _} -> []
+           end,
+    lists:append([IPv6, IPv4]).
 
 %%------------------------------------------------------------------------------
 %% @doc
@@ -415,12 +429,12 @@ maybe_strip_port(Address) ->
 maybe_resolve_srv_records(Address, Options) ->
     Domain = <<"_sip._udp.", Address/binary>>,
     case inet_res:lookup(kz_term:to_list(Domain), 'in', 'srv', Options) of
-        [] -> maybe_resolve_a_records([Address], Options);
-        SRVs -> maybe_resolve_a_records([D || {_, _, _, D} <- SRVs], Options)
+        [] -> maybe_resolve_records([Address], Options);
+        SRVs -> maybe_resolve_records([D || {_, _, _, D} <- SRVs], Options)
     end.
 
--spec maybe_resolve_a_records(kz_term:ne_binaries(), options()) -> kz_term:ne_binaries().
-maybe_resolve_a_records(Domains, Options) ->
+-spec maybe_resolve_records(kz_term:ne_binaries(), options()) -> kz_term:ne_binaries().
+maybe_resolve_records(Domains, Options) ->
     lists:foldr(fun(Domain, IPs) ->
                         maybe_resolve_fold(Domain, IPs, Options)
                 end
@@ -432,21 +446,25 @@ maybe_resolve_a_records(Domains, Options) ->
 maybe_resolve_fold(Domain, IPs, Options) ->
     case is_ip(Domain) of
         'true' -> [Domain];
-        'false' -> resolve_a_record(kz_term:to_list(Domain), IPs, Options)
+        'false' -> resolve_host_record(kz_term:to_list(Domain), IPs, Options)
     end.
 
--spec resolve_a_record(string(), kz_term:ne_binaries(), options()) -> kz_term:ne_binaries().
-resolve_a_record(Domain, IPs, Options) ->
-    case inet_res:lookup(Domain, 'in', 'a', Options) of
-        [] ->
+-spec resolve_host_record(string(), kz_term:ne_binaries(), options()) -> kz_term:ne_binaries().
+resolve_host_record(Domain, IPs, Options) ->
+    case {inet_res:lookup(Domain, 'in', 'aaaa', Options), inet_res:lookup(Domain, 'in', 'a', Options)} of
+        {[],[]} ->
             lager:info("unable to resolve ~s", [Domain]),
             IPs;
-        Addresses ->
-            lists:foldr(fun resolve_a_record_fold/2, IPs, Addresses)
+        {AddressesIPv6,[]} ->
+            lists:foldr(fun resolve_host_record_fold/2, IPs, AddressesIPv6);
+        {[],AddressesIPv4} ->
+            lists:foldr(fun resolve_host_record_fold/2, IPs, AddressesIPv4);
+        {AddressesIPv6,AddressesIPv4} ->
+            lists:foldr(fun resolve_host_record_fold/2, IPs, lists:append([AddressesIPv6,AddressesIPv4]))
     end.
 
--spec resolve_a_record_fold(inet:ip4_address(), kz_term:ne_binaries()) -> kz_term:ne_binaries().
-resolve_a_record_fold(IPTuple, I) ->
+-spec resolve_host_record_fold(inet:ip4_address(), kz_term:ne_binaries()) -> kz_term:ne_binaries().
+resolve_host_record_fold(IPTuple, I) ->
     [iptuple_to_binary(IPTuple) | I].
 
 %%------------------------------------------------------------------------------
