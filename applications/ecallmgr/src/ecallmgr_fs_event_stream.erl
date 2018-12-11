@@ -25,6 +25,7 @@
                ,bindings :: bindings()
                ,subclasses :: bindings()
                ,ip :: inet:ip_address() | 'undefined'
+               ,ips :: [inet:ip_address()] | 'undefined'
                ,port :: inet:port_number() | 'undefined'
                ,socket :: inet:socket() | 'undefined'
                ,idle_alert = 'infinity' :: timeout()
@@ -77,18 +78,27 @@ handle_call(_Request, _From, State) ->
 %% @end
 %%------------------------------------------------------------------------------
 -spec handle_cast(any(), state()) -> kz_types:handle_cast_ret_state(state()).
-handle_cast('connect', #state{ip=IP, port=Port, idle_alert=Timeout}=State) ->
+handle_cast('connect', #state{ips=[]}=State) ->
+    lager:debug("No IP addresses available for event listener"),
+    {'stop', 'noiptoconnect', State};
+handle_cast('connect', #state{ips=IPs, port=Port, idle_alert=Timeout}=State) ->
+    [IP | IPRest] = IPs,
     PacketType = kapps_config:get_integer(?APP_NAME, <<"tcp_packet_type">>, 2),
-    case gen_tcp:connect(IP, Port, [{'mode', 'binary'}
+    try gen_tcp:connect(IP, Port, [{'mode', 'binary'}
                                    ,{'packet', PacketType}
                                    ])
     of
         {'ok', Socket} ->
             lager:debug("opened event stream socket to ~p:~p for ~p"
                        ,[IP, Port, get_event_bindings(State)]),
-            {'noreply', State#state{socket=Socket}, Timeout};
+            {'noreply', State#state{ip=IP,socket=Socket}, Timeout};
+        {'error', 'econnrefused'} ->
+            lager:debug("connections refused to ~p:~p" ,[IP, Port]),
+            handle_cast('connect', State#state{ips=IPRest});
         {'error', Reason} ->
             {'stop', Reason, State}
+    catch
+        'exit':'badarg' -> handle_cast('connect', State#state{ips=IPRest})
     end;
 handle_cast(_Msg, #state{socket='undefined'}=State) ->
     lager:debug("unhandled cast: ~p", [_Msg]),
@@ -220,14 +230,19 @@ code_change(_OldVsn, State, _Extra) ->
 request_event_stream(#state{node=Node}=State) ->
     Bindings = get_event_bindings(State),
     case maybe_bind(Node, Bindings) of
-        {'ok', {IP, Port}} ->
-            {'ok', IPAddress} = inet_parse:address(IP),
+        {'ok', {Host, Port}} ->
+            IPAddresses = case kz_network_utils:resolve(list_to_binary(Host)) of
+                            [] -> kz_network_utils:getaddrs(Host);
+                            IPAddressList -> lists:map(fun(IPAddrBin) -> {'ok',IPAddr} = inet:parse_address(binary_to_list(IPAddrBin)),
+                                                                         IPAddr
+                                                        end, IPAddressList)
+                        end,
             gen_server:cast(self(), 'connect'),
             kz_util:put_callid(list_to_binary([kz_term:to_binary(Node)
-                                              ,$-, kz_term:to_binary(IP)
+                                              ,$-, kz_term:to_binary(Host)
                                               ,$:, kz_term:to_binary(Port)
                                               ])),
-            {'ok', State#state{ip=IPAddress, port=kz_term:to_integer(Port)}};
+            {'ok', State#state{ips=IPAddresses, port=kz_term:to_integer(Port)}};
         {'EXIT', ExitReason} ->
             {'stop', {'shutdown', ExitReason}};
         {'error', ErrorReason} ->
@@ -294,7 +309,7 @@ maybe_bind(Node, Bindings, 2) ->
     end;
 maybe_bind(Node, Bindings, Attempts) ->
     case catch gen_server:call({'mod_kazoo', Node}, {'event', Bindings}, 2 * ?MILLISECONDS_IN_SECOND) of
-        {'ok', {_IP, _Port}}=OK -> OK;
+        {'ok', {_Host, _Port}}=OK -> OK;
         {'EXIT', {'timeout',_}} ->
             lager:debug("timeout on attempt ~b to bind: ~p", [Attempts, Bindings]),
             maybe_bind(Node, Bindings, Attempts+1);
