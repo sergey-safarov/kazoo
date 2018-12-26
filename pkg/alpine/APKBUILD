@@ -20,8 +20,8 @@ pkggroups="daemon"
 arch="all"
 license="GPL2+"
 options="!fhs"
-depends="libressl2.5-libcrypto expat libgcc ncurses-libs libstdc++ zlib musl-utils ghostscript tiff-tools fontconfig imagemagick"
-makedepends="wget bash python2 gcc expat-dev libressl-dev erlang erlang-dev erlang-parsetools erlang-tools erlang-crypto erlang-syntax-tools erlang-ssl erlang-eunit erlang-hipe erlang-public-key erlang-asn1 erlang-inets erlang-xmerl erlang-observer erlang-sasl erlang-debugger erlang-runtime-tools erlang-snmp erlang-wx grep"
+depends="expat libgcc ncurses-libs libstdc++ zlib musl-utils ghostscript tiff-tools fontconfig imagemagick"
+makedepends="wget bash python2 gcc expat-dev libressl-dev erlang erlang-dev erlang-parsetools erlang-tools erlang-crypto erlang-syntax-tools erlang-ssl erlang-eunit erlang-hipe erlang-public-key erlang-asn1 erlang-inets erlang-xmerl erlang-observer erlang-sasl erlang-debugger erlang-runtime-tools erlang-snmp erlang-wx grep elixir coreutils"
 
 source="${pkgname}-${pkgver}${_suffix}.tar.gz::https://github.com/sergey-safarov/$pkgname/archive/$_gitcommit.tar.gz
 "
