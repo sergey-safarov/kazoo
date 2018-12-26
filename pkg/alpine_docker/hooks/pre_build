@@ -6,5 +6,5 @@ if [ ! -z "$SOURCE_BRANCH" ];then
     ENV_OPT="-e SOURCE_BRANCH=$SOURCE_BRANCH"
 fi
 
-docker run --volume=`pwd`/../..:/usr/src/kazoo --volume=`pwd`/build.sh:/build.sh --entrypoint=/build.sh $ENV_OPT safarov/erlang-wx
+docker run --volume=`pwd`/../..:/usr/src/kazoo --volume=`pwd`/build.sh:/build.sh --entrypoint=/build.sh $ENV_OPT alpine:3.8
 exit $?

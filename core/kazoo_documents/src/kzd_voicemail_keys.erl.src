@@ -76,7 +76,7 @@ set_delete(Doc, Delete) ->
 
 -spec exit(doc()) -> kz_term:api_ne_binary().
 exit(Doc) ->
-    exit(Doc, 'undefined').
+    kzd_voicemail_keys:exit(Doc, 'undefined').
 
 -spec exit(doc(), Default) -> kz_term:ne_binary() | Default.
 exit(Doc, Default) ->

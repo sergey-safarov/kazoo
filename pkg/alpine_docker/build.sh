@@ -13,7 +13,7 @@ apk add --no-cache findutils abuild build-base git wget bash python2 gcc expat-d
                    erlang erlang-dev erlang-parsetools erlang-tools erlang-crypto erlang-syntax-tools \
                    erlang-ssl erlang-eunit erlang-hipe erlang-public-key erlang-asn1 erlang-inets erlang-xmerl \
                    erlang-observer erlang-sasl erlang-debugger erlang-runtime-tools erlang-snmp erlang-wx \
-                   musl-utils ghostscript grep tiff-tools fontconfig imagemagick
+                   musl-utils ghostscript grep tiff-tools fontconfig imagemagick elixir coreutils
 
     adduser -D build && addgroup build abuild
     echo "%abuild ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/abuild
@@ -92,9 +92,9 @@ filter_unnecessary_files() {
 
 ldd_helper() {
     TESTFILE=$1
-    LD_PRELOAD=/opt/kazoo/erts-8.3/bin/beam.smp ldd $TESTFILE 2> /dev/null > /dev/null || return
+    LD_PRELOAD=/opt/kazoo/erts-9.3/bin/beam.smp ldd $TESTFILE 2> /dev/null > /dev/null || return
 
-    LD_PRELOAD=/opt/kazoo/erts-8.3/bin/beam.smp ldd $TESTFILE | sed -e 's/^.* => //' -e 's/ (.*)//' -e 's/\s\+//' -e '/^ldd$/d'
+    LD_PRELOAD=/opt/kazoo/erts-9.3/bin/beam.smp ldd $TESTFILE | sed -e 's/^.* => //' -e 's/ (.*)//' -e 's/\s\+//' -e '/^ldd$/d'
 }
 
 find_binaries() {
