@@ -55,6 +55,10 @@
        ,kapps_config:get_is_true(?APP_NAME, <<"notice_enabled_by_default">>, 'true')
        ).
 
+-define(FROM_ADDRESS
+       ,kapps_config:get_ne_binary(?APP_NAME, <<"from_address">>, list_to_binary([<<"no_reply@">>, net_adm:localhost()]))
+       ).
+
 -spec send_email(email_map(), kz_term:ne_binary(), rendered_templates()) ->
           'ok' | {'error', any()}.
 send_email(Emails, Subject, RenderedTemplates) ->
@@ -451,7 +455,7 @@ maybe_add_parent_params(AccountId, AccountJObj) ->
 
 -spec default_from_address() -> kz_term:ne_binary().
 default_from_address() ->
-    list_to_binary([<<"no_reply@">>, net_adm:localhost()]).
+    ?FROM_ADDRESS.
 
 -spec default_reply_to() -> kz_term:api_ne_binary().
 default_reply_to() -> 'undefined'.
