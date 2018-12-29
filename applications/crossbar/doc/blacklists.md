@@ -35,6 +35,7 @@ curl -v -X GET \
 ```shell
 curl -v -X PUT \
     -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data": {"name": "New list"}}' \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/blacklists
 ```
 
