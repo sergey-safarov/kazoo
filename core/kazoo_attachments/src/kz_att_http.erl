@@ -103,7 +103,9 @@ maybe_encode_content_part(_Settings, Contents) -> Contents.
 format_verb(<<"POST">>) -> 'post';
 format_verb(<<"PUT">>) -> 'put';
 format_verb(<<"post">>) -> 'post';
-format_verb(<<"put">>) -> 'put'.
+format_verb(<<"put">>) -> 'put';
+format_verb(Value) when not erlang:is_binary(Value) ->
+    format_verb(kz_term:to_binary(Value)).
 
 -spec fields(map()) -> url_fields().
 fields(#{field_list := FieldList}) -> FieldList;
