@@ -5,6 +5,7 @@
 %%%-----------------------------------------------------------------------------
 -module(kzd_blacklists).
 
+-export([type/0]).
 -export([new/0]).
 -export([action/1, action/2, set_action/2]).
 -export([enabled/1, enabled/2, set_enabled/2]).
@@ -21,6 +22,9 @@
 -export_type([doc/0]).
 
 -define(SCHEMA, <<"blacklists">>).
+
+-spec type() -> kz_term:ne_binary().
+type() -> <<"blacklists">>.
 
 -spec new() -> doc().
 new() ->
