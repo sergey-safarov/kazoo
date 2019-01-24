@@ -13,6 +13,7 @@
 -export([numbers/1, numbers/2, set_numbers/2]).
 -export([numbers_name/1, numbers_name/2, set_numbers_name/2]).
 -export([owner_id/1, owner_id/2, set_owner_id/2]).
+-export([is_blacklist/1]).
 -export([should_block_anonymous/1, should_block_anonymous/2, set_should_block_anonymous/2]).
 
 
@@ -101,6 +102,11 @@ owner_id(Doc, Default) ->
 -spec set_owner_id(doc(), kz_term:ne_binary()) -> doc().
 set_owner_id(Doc, OwnerId) ->
     kz_json:set_value([<<"owner_id">>], OwnerId, Doc).
+
+-spec is_blacklist(kz_term:api_object()) -> boolean().
+is_blacklist('undefined') -> 'false';
+is_blacklist(Doc) ->
+    kz_doc:type(Doc) =:= type().
 
 -spec should_block_anonymous(doc()) -> kz_term:api_boolean().
 should_block_anonymous(Doc) ->
