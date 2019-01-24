@@ -1001,6 +1001,22 @@
         "blacklists": {
             "description": "Schema for a blacklists",
             "properties": {
+                "action": {
+                    "default": "block",
+                    "description": "Action required apply to call",
+                    "enum": [
+                        "block",
+                        "next_cf_element",
+                        "pass",
+                        "screen"
+                    ],
+                    "type": "string"
+                },
+                "enabled": {
+                    "default": true,
+                    "description": "Blacklist current status",
+                    "type": "boolean"
+                },
                 "name": {
                     "description": "A friendly name for the temporal rule set",
                     "maxLength": 128,
@@ -1009,9 +1025,20 @@
                 },
                 "numbers": {
                     "default": {},
-                    "description": "Map of caller id number to block",
-                    "properties": {},
+                    "description": "Map of caller id number to block or pass",
+                    "properties": {
+                        "name": {
+                            "description": "Number text description",
+                            "type": "string"
+                        }
+                    },
                     "type": "object"
+                },
+                "owner_id": {
+                    "description": "The account, user or device ID that 'owns' the blacklist. If owner_id document is missed, then assumed account_id value",
+                    "maxLength": 32,
+                    "minLength": 32,
+                    "type": "string"
                 },
                 "should_block_anonymous": {
                     "description": "Should block Anonymous call",
