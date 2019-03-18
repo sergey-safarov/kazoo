@@ -226,9 +226,9 @@ do_revise_docs_from_folder(DbName, Sleep, [H|T]) ->
             andalso timer:sleep(250),
         do_revise_docs_from_folder(DbName, Sleep, T)
     catch
-        _E:_R ->
+        _E:_R:ST ->
             lager:debug("failed: ~s: ~p", [_E, _R]),
-            kz_util:log_stacktrace(),
+            kz_util:log_stacktrace(ST),
             do_revise_docs_from_folder(DbName, Sleep, T)
     end.
 

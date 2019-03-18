@@ -799,8 +799,7 @@ handle_callback_info(Message, #state{module=Module
         {'stop', Reason, ModuleState1} ->
             {'stop', Reason, State#state{module_state=ModuleState1}}
     catch
-        _E:R ->
-            ST = erlang:get_stacktrace(),
+        _E:R:ST ->
             lager:debug("handle_info exception: ~s: ~p", [_E, R]),
             kz_util:log_stacktrace(ST),
             {'stop', R, State}
@@ -1079,8 +1078,7 @@ handle_module_call(Request, From, #state{module=Module
         {'stop', Reason, Reply, ModuleState1} ->
             {'stop', Reason, Reply, State#state{module_state=ModuleState1}}
     catch
-        _E:R ->
-            ST = erlang:get_stacktrace(),
+        _E:R:ST ->
             lager:debug("handle_call exception: ~s: ~p", [_E, R]),
             kz_util:log_stacktrace(ST),
             {'stop', R, State}
@@ -1104,8 +1102,7 @@ handle_module_cast(Msg, #state{module=Module
         {'stop', Reason, ModuleState1} ->
             {'stop', Reason, State#state{module_state=ModuleState1}}
     catch
-        _E:R ->
-            ST = erlang:get_stacktrace(),
+        _E:R:ST ->
             lager:debug("handle_cast exception: ~s: ~p", [_E, R]),
             kz_util:log_stacktrace(ST),
             {'stop', R, State}
