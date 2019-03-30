@@ -61,7 +61,7 @@ call_command(Node, UUID, JObj) ->
 
             lager:debug("executing bridge on channel ~p", [UUID]),
 
-            {'ok', Channel} = ecallmgr_fs_channel:fetch(UUID, 'record'),
+            {'ok', Channel} = maybe_delay_fetch_channal(UUID, 'record'),
 
             _ = handle_ringback(Node, UUID, JObj),
             _ = maybe_early_media(Node, UUID, JObj, Endpoints),
@@ -86,6 +86,30 @@ call_command(Node, UUID, JObj) ->
                                  ,Routines
                                  ),
             {<<"xferext">>, XferExt}
+    end.
+
+-type fetch_resp() :: kz_json:object() |
+                      kz_term:proplist() |
+                      channel().
+-type channel_format() :: 'json' | 'proplist' | 'record'.
+
+-spec maybe_delay_fetch_channal(kz_term:ne_binary(), channel_format()) ->
+                   {'ok', fetch_resp()} |
+                   {'error', 'not_found'}.
+maybe_delay_fetch_channal(UUID, Format) ->
+    maybe_delay_fetch_channal(UUID, Format, 5).
+
+-spec maybe_delay_fetch_channal(kz_term:ne_binary(), channel_format(), integer()) ->
+                   {'ok', fetch_resp()} |
+                   {'error', 'not_found'}.
+maybe_delay_fetch_channal(UUID, Format, 0) ->
+    ecallmgr_fs_channel:fetch(UUID, Format);
+maybe_delay_fetch_channal(UUID, Format, RetryAttempt) ->
+    case ecallmgr_fs_channel:fetch(UUID, Format) of
+        {'error', 'not_found'} ->
+            timer:sleep(round(0.2 * ?MILLISECONDS_IN_SECOND)),
+            maybe_delay_fetch_channal(UUID, Format, RetryAttempt - 1);
+        {'ok', _} = Resp -> Resp
     end.
 
 -spec unbridge(kz_term:ne_binary(), kz_json:object()) ->
