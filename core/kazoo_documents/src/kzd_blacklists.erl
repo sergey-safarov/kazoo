@@ -7,6 +7,7 @@
 
 -export([type/0]).
 -export([new/0]).
+-export([fetch/2, fetch/3]).
 -export([action/1, action/2, set_action/2]).
 -export([enabled/1, enabled/2, set_enabled/2]).
 -export([name/1, name/2, set_name/2]).
@@ -30,6 +31,53 @@ type() -> <<"blacklists">>.
 -spec new() -> doc().
 new() ->
     kz_json_schema:default_object(?SCHEMA).
+
+-spec fetch(kz_term:api_ne_binary(), kz_term:api_ne_binary()) ->
+                   {'ok', doc()} |
+                   kz_datamgr:data_error().
+fetch(Account, BlacklistId) ->
+    fetch(Account, BlacklistId, #{}).
+
+-spec fetch(kz_term:api_ne_binary(), kz_term:api_ne_binary(), map()) ->
+                   {'ok', doc()} |
+                   kz_datamgr:data_error().
+fetch('undefined', _BlacklistId, _Options) ->
+    {'error', 'invalid_db_name'};
+fetch(_Account, 'undefined', _Options) ->
+    {'error', 'not_found'};
+fetch(Account, BlacklistId=?NE_BINARY, Options) ->
+    AccountDb = kz_util:format_account_db(Account),
+    case kz_datamgr:open_cache_doc(AccountDb, BlacklistId) of
+        {'error', _R}=E -> E;
+        {'ok', Doc} -> maybe_filter_fetch(Doc, Options)
+    end.
+
+-spec maybe_filter_fetch(doc(), map()) ->
+                                {'ok', doc()} |
+                                kz_datamgr:data_error().
+maybe_filter_fetch(Doc, #{<<"action">> := Action}=Options) ->
+    case action(Doc) of
+        Action -> maybe_filter_fetch(Doc, maps:remove(<<"action">>, Options));
+        _ ->
+            Value = kz_term:to_binary(Action),
+            {'error', <<"blacklist 'action' value is not match ", Value/binary>>}
+    end;
+maybe_filter_fetch(Doc, #{<<"enabled">> := Enabled}=Options) ->
+    case enabled(Doc) of
+        Enabled -> maybe_filter_fetch(Doc, maps:remove(<<"enabled">>, Options));
+        _ ->
+            Value = kz_term:to_binary(Enabled),
+            {'error', <<"blacklist 'enabled' value is not match ", Value/binary>>}
+    end;
+maybe_filter_fetch(Doc, #{<<"should_block_anonymous">> := ShouldBlockAnonymous}=Options) ->
+    case should_block_anonymous(Doc) of
+        ShouldBlockAnonymous -> maybe_filter_fetch(Doc, maps:remove(<<"should_block_anonymous">>, Options));
+        _ ->
+            Value = kz_term:to_binary(ShouldBlockAnonymous),
+            {'error', <<"blacklist 'should_block_anonymous' value is not match ", Value/binary>>}
+    end;
+maybe_filter_fetch(Doc, _Options) ->
+    {'ok', Doc}.
 
 -spec action(doc()) -> binary().
 action(Doc) ->
