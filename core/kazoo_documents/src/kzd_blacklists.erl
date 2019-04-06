@@ -157,5 +157,7 @@ should_block_anonymous(Doc, Default) ->
     kz_json:get_boolean_value([<<"should_block_anonymous">>], Doc, Default).
 
 -spec set_should_block_anonymous(doc(), boolean()) -> doc().
+set_should_block_anonymous(Doc, 'undefined') ->
+    kz_json:delete_key([<<"should_block_anonymous">>], Doc);
 set_should_block_anonymous(Doc, ShouldBlockAnonymous) ->
     kz_json:set_value([<<"should_block_anonymous">>], ShouldBlockAnonymous, Doc).
