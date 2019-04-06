@@ -16,6 +16,7 @@
 -export([owner_id/1, owner_id/2, set_owner_id/2, set_owner_id/3]).
 -export([is_blacklist/1]).
 -export([is_valid_owner_id/2]).
+-export([is_number_blacklisted/4]).
 -export([should_block_anonymous/1, should_block_anonymous/2, set_should_block_anonymous/2]).
 
 -include("kz_documents.hrl").
@@ -209,3 +210,24 @@ set_should_block_anonymous(Doc, 'undefined') ->
     kz_json:delete_key([<<"should_block_anonymous">>], Doc);
 set_should_block_anonymous(Doc, ShouldBlockAnonymous) ->
     kz_json:set_value([<<"should_block_anonymous">>], ShouldBlockAnonymous, Doc).
+
+-spec is_number_blacklisted(kz_term:api_ne_binary(), kz_term:api_ne_binary(), kz_term:api_ne_binary() | kz_term:api_ne_binaries(), map()) -> boolean().
+is_number_blacklisted('undefined', _AccountId, _BlacklistsId, _Options) ->
+    'false';
+is_number_blacklisted(_Number, 'undefined', _BlacklistsId, _Options) ->
+    'false';
+is_number_blacklisted(Number, AccountId, BlacklistId=?NE_BINARY , Options) ->
+    is_number_blacklisted(Number, AccountId, [BlacklistId] , Options);
+is_number_blacklisted(_Number, _AccountId, [], _Options) ->
+    'false';
+is_number_blacklisted(Number, AccountId, [BlacklistId | Rest], Options) ->
+    case fetch(AccountId, BlacklistId, Options) of
+        {'error', Message} ->
+            lager:debug("could not fetch ~s blacklist in ~s account: ~s", [BlacklistId, AccountId, Message]),
+            is_number_blacklisted(Number, AccountId, Rest, Options);
+        {'ok', Doc} ->
+            case kz_json:get_value(Number, numbers(Doc)) of
+                'undefined' -> is_number_blacklisted(Number, AccountId, Rest, Options);
+                _ -> 'true'
+            end
+    end.
