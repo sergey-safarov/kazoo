@@ -3,6 +3,17 @@
     "_id": "accounts",
     "description": "Accounts represent tenants or customers on the system. Each account represents an individual dataset or sandbox that only one tenant can access. The data set is architecturally independent from other tenants.",
     "properties": {
+        "blacklists": {
+            "default": [],
+            "description": "A list of block blacklist that is checked before call is processed",
+            "items": {
+                "maxLength": 36,
+                "minLength": 1,
+                "type": "string"
+            },
+            "type": "array",
+            "uniqueItems": true
+        },
         "call_recording": {
             "additionalProperties": false,
             "description": "call recording configuration",
