@@ -263,8 +263,28 @@ block_call_routine({Fun, {Code, Msg}}, JObj) ->
 should_block_anonymous(JObj) ->
     kz_privacy:should_block_anonymous(JObj)
         orelse (kz_privacy:is_anonymous(JObj)
-                andalso kz_json:is_true(<<"should_block_anonymous">>, get_blacklist(JObj))
+                andalso is_account_use_blacklist(JObj)
                ).
+
+-spec is_account_use_blacklist(kz_json:object()) -> kz_json:object().
+is_account_use_blacklist(JObj) ->
+    AccountId = kz_json:get_ne_value(?CCV(<<"Account-ID">>), JObj),
+    case get_blacklists(AccountId) of
+        {'error', _R} -> 'false';
+        {'ok', Blacklists} -> is_lists_block_anonymous(AccountId, Blacklists)
+    end.
+
+-spec is_lists_block_anonymous(kz_term:ne_binary(), kz_term:ne_binaries()) -> boolean().
+is_lists_block_anonymous(_AccountId, []) ->
+    'false';
+is_lists_block_anonymous(AccountId, [Blacklist | Rest]) ->
+    case kzd_blacklists:fetch(AccountId, Blacklist, #{<<"should_block_anonymous">> => 'true'}) of
+        {'error', Reason} ->
+            lager:debug("could not open ~s account blacklist ~s : ~p", [AccountId, Blacklist, Reason]),
+            is_lists_block_anonymous(AccountId, Rest);
+        {'ok', _Doc} -> true
+    end.
+
 
 %%------------------------------------------------------------------------------
 %% @doc relay a route request once populated with the new properties
@@ -335,37 +355,6 @@ get_blacklists(AccountId) ->
                 Blacklists -> {'ok', Blacklists}
             end
     end.
-
--spec get_blacklist(kz_json:object()) -> kz_json:object().
-get_blacklist(JObj) ->
-    AccountId = kz_json:get_ne_value(?CCV(<<"Account-ID">>), JObj),
-    case get_blacklists(AccountId) of
-        {'error', _R} -> kz_json:new();
-        {'ok', Blacklists} -> get_blacklist(AccountId, Blacklists)
-    end.
-
--spec get_blacklist(kz_term:ne_binary(), kz_term:ne_binaries()) -> kz_json:object().
-get_blacklist(AccountId, Blacklists) ->
-    AccountDb = kz_util:format_account_id(AccountId, 'encoded'),
-    lists:foldl(fun(BlacklistId, Acc) ->
-                        case kz_datamgr:open_cache_doc(AccountDb, BlacklistId) of
-                            {'error', _R} ->
-                                lager:error("could not open ~s in ~s: ~p", [BlacklistId, AccountDb, _R]),
-                                Acc;
-                            {'ok', Doc} ->
-                                Numbers = kz_json:get_value(<<"numbers">>, Doc, kz_json:new()),
-                                BlackList = maybe_set_block_anonymous(Numbers, kz_json:is_true(<<"should_block_anonymous">>, Doc)),
-                                kz_json:merge_jobjs(Acc, BlackList)
-                        end
-                end
-               ,kz_json:new()
-               ,Blacklists
-               ).
-
--spec maybe_set_block_anonymous(kz_json:object(), boolean()) -> kz_json:object().
-maybe_set_block_anonymous(JObj, 'false') -> JObj;
-maybe_set_block_anonymous(JObj, 'true') ->
-    kz_json:set_value(<<"should_block_anonymous">>, 'true', JObj).
 
 -spec send_error_response(kz_json:object(), kz_term:ne_binary(), kz_term:ne_binary()) -> 'true'.
 send_error_response(JObj, Code, Message) ->
