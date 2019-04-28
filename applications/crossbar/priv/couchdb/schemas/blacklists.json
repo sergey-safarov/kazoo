@@ -48,6 +48,19 @@
             "support_level": "supported",
             "type": "string"
         },
+        "patterns": {
+            "default": {},
+            "description": "Map of regular expressions that blacklist should execute for caller id number to block or pass",
+            "properties": {
+                "name": {
+                    "description": "Regular expressions text description",
+                    "support_level": "supported",
+                    "type": "string"
+                }
+            },
+            "support_level": "supported",
+            "type": "object"
+        },
         "should_block_anonymous": {
             "description": "Should block Anonymous call",
             "support_level": "supported",
