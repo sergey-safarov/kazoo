@@ -14,6 +14,8 @@
 -export([numbers/1, numbers/2, set_numbers/2, format_numbers/1]).
 -export([numbers_name/1, numbers_name/2, set_numbers_name/2]).
 -export([owner_id/1, owner_id/2, set_owner_id/2, set_owner_id/3]).
+-export([patterns/1, patterns/2, set_patterns/2]).
+-export([patterns_name/1, patterns_name/2, set_patterns_name/2]).
 -export([is_blacklist/1]).
 -export([is_valid_owner_id/2]).
 -export([is_number_blacklisted/4]).
@@ -196,6 +198,30 @@ is_valid_owner_id(OwnerId, AccountId) ->
 is_blacklist('undefined') -> 'false';
 is_blacklist(Doc) ->
     kz_doc:type(Doc) =:= type().
+
+-spec patterns(doc()) -> kz_json:object().
+patterns(Doc) ->
+    patterns(Doc, kz_json:new()).
+
+-spec patterns(doc(), Default) -> kz_json:object() | Default.
+patterns(Doc, Default) ->
+    kz_json:get_json_value([<<"patterns">>], Doc, Default).
+
+-spec set_patterns(doc(), kz_json:object()) -> doc().
+set_patterns(Doc, Patterns) ->
+    kz_json:set_value([<<"patterns">>], Patterns, Doc).
+
+-spec patterns_name(doc()) -> kz_term:api_binary().
+patterns_name(Doc) ->
+    patterns_name(Doc, 'undefined').
+
+-spec patterns_name(doc(), Default) -> binary() | Default.
+patterns_name(Doc, Default) ->
+    kz_json:get_binary_value([<<"patterns">>, <<"name">>], Doc, Default).
+
+-spec set_patterns_name(doc(), binary()) -> doc().
+set_patterns_name(Doc, PatternsName) ->
+    kz_json:set_value([<<"patterns">>, <<"name">>], PatternsName, Doc).
 
 -spec should_block_anonymous(doc()) -> kz_term:api_boolean().
 should_block_anonymous(Doc) ->
