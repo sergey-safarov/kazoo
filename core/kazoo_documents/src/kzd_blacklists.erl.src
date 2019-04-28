@@ -12,6 +12,8 @@
 -export([numbers/1, numbers/2, set_numbers/2]).
 -export([numbers_name/1, numbers_name/2, set_numbers_name/2]).
 -export([owner_id/1, owner_id/2, set_owner_id/2]).
+-export([patterns/1, patterns/2, set_patterns/2]).
+-export([patterns_name/1, patterns_name/2, set_patterns_name/2]).
 -export([should_block_anonymous/1, should_block_anonymous/2, set_should_block_anonymous/2]).
 
 
@@ -97,6 +99,30 @@ owner_id(Doc, Default) ->
 -spec set_owner_id(doc(), kz_term:ne_binary()) -> doc().
 set_owner_id(Doc, OwnerId) ->
     kz_json:set_value([<<"owner_id">>], OwnerId, Doc).
+
+-spec patterns(doc()) -> kz_json:object().
+patterns(Doc) ->
+    patterns(Doc, kz_json:new()).
+
+-spec patterns(doc(), Default) -> kz_json:object() | Default.
+patterns(Doc, Default) ->
+    kz_json:get_json_value([<<"patterns">>], Doc, Default).
+
+-spec set_patterns(doc(), kz_json:object()) -> doc().
+set_patterns(Doc, Patterns) ->
+    kz_json:set_value([<<"patterns">>], Patterns, Doc).
+
+-spec patterns_name(doc()) -> kz_term:api_binary().
+patterns_name(Doc) ->
+    patterns_name(Doc, 'undefined').
+
+-spec patterns_name(doc(), Default) -> binary() | Default.
+patterns_name(Doc, Default) ->
+    kz_json:get_binary_value([<<"patterns">>, <<"name">>], Doc, Default).
+
+-spec set_patterns_name(doc(), binary()) -> doc().
+set_patterns_name(Doc, PatternsName) ->
+    kz_json:set_value([<<"patterns">>, <<"name">>], PatternsName, Doc).
 
 -spec should_block_anonymous(doc()) -> kz_term:api_boolean().
 should_block_anonymous(Doc) ->

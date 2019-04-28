@@ -18,6 +18,8 @@ Key | Description | Type | Default | Required | Support Level
 `numbers.name` | Number text description | `string()` |   | `false` | `supported`
 `numbers` | Map of caller id number to block or pass | `object()` | `{}` | `false` | `supported`
 `owner_id` | The account, user or device ID that 'owns' the blacklist. If owner_id document is missed, then assumed account_id value | `string(32)` |   | `false` | `supported`
+`patterns.name` | Regular expressions text description | `string()` |   | `false` | `supported`
+`patterns` | Map of regular expressions that blacklist should execute for caller id number to block or pass | `object()` | `{}` | `false` | `supported`
 `should_block_anonymous` | Should block Anonymous call | `boolean()` |   | `false` | `supported`
 
 

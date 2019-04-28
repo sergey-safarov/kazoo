@@ -1051,6 +1051,17 @@
                     "minLength": 32,
                     "type": "string"
                 },
+                "patterns": {
+                    "default": {},
+                    "description": "Map of regular expressions that blacklist should execute for caller id number to block or pass",
+                    "properties": {
+                        "name": {
+                            "description": "Regular expressions text description",
+                            "type": "string"
+                        }
+                    },
+                    "type": "object"
+                },
                 "should_block_anonymous": {
                     "description": "Should block Anonymous call",
                     "type": "boolean"
