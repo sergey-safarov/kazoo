@@ -397,6 +397,11 @@
                     "support_level": "supported",
                     "type": "string"
                 },
+                "proxy": {
+                    "description": "The SIP URL used as relay proxy",
+                    "support_level": "supported",
+                    "type": "string"
+                },
                 "realm": {
                     "description": "The realm this device should use, overriding the account realm. Should rarely be necessary.",
                     "maxLength": 253,
