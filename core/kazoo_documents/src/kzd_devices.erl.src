@@ -66,6 +66,7 @@
 -export([sip_method/1, sip_method/2, set_sip_method/2]).
 -export([sip_number/1, sip_number/2, set_sip_number/2]).
 -export([sip_password/1, sip_password/2, set_sip_password/2]).
+-export([sip_proxy/1, sip_proxy/2, set_sip_proxy/2]).
 -export([sip_realm/1, sip_realm/2, set_sip_realm/2]).
 -export([sip_route/1, sip_route/2, set_sip_route/2]).
 -export([sip_static_route/1, sip_static_route/2, set_sip_static_route/2]).
@@ -804,6 +805,18 @@ sip_password(Doc, Default) ->
 -spec set_sip_password(doc(), kz_term:ne_binary()) -> doc().
 set_sip_password(Doc, SipPassword) ->
     kz_json:set_value([<<"sip">>, <<"password">>], SipPassword, Doc).
+
+-spec sip_proxy(doc()) -> kz_term:api_binary().
+sip_proxy(Doc) ->
+    sip_proxy(Doc, 'undefined').
+
+-spec sip_proxy(doc(), Default) -> binary() | Default.
+sip_proxy(Doc, Default) ->
+    kz_json:get_binary_value([<<"sip">>, <<"proxy">>], Doc, Default).
+
+-spec set_sip_proxy(doc(), binary()) -> doc().
+set_sip_proxy(Doc, SipProxy) ->
+    kz_json:set_value([<<"sip">>, <<"proxy">>], SipProxy, Doc).
 
 -spec sip_realm(doc()) -> kz_term:api_ne_binary().
 sip_realm(Doc) ->

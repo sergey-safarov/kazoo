@@ -76,6 +76,7 @@ Key | Description | Type | Default | Required | Support Level
 `sip.method` | Method of authentication | `string('password' | 'ip')` | `password` | `false` | `supported`
 `sip.number` | The number used if the invite format is 1npan, npan, or e164 (if not set the dialed number is used) | `string()` |   | `false` |  
 `sip.password` | SIP authentication password | `string(5..32)` |   | `false` | `supported`
+`sip.proxy` | The SIP URL used as relay proxy | `string()` |   | `false` | `supported`
 `sip.realm` | The realm this device should use, overriding the account realm. Should rarely be necessary. | `string(4..253)` |   | `false` |  
 `sip.route` | The SIP URL used if the invite format is 'route' | `string()` |   | `false` | `supported`
 `sip.static_route` | Sends all inbound calls to this string (instead of dialed number or username) | `string()` |   | `false` |  
