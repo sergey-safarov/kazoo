@@ -8,6 +8,7 @@
 -export([type/0]).
 -export([new/0]).
 -export([fetch/2, fetch/3]).
+-export([fetch_number/3, fetch_patterns/1]).
 -export([action/1, action/2, set_action/2]).
 -export([enabled/1, enabled/2, set_enabled/2]).
 -export([name/1, name/2, set_name/2]).
@@ -22,6 +23,9 @@
 -export([should_block_anonymous/1, should_block_anonymous/2, set_should_block_anonymous/2]).
 
 -include("kz_documents.hrl").
+
+-define(LIST_BY_NUMBER, <<"blacklists/listing_by_number">>).
+-define(LIST_BY_PATTERN, <<"blacklists/listing_by_pattern">>).
 
 -type doc() :: kz_json:object().
 -export_type([doc/0]).
@@ -46,14 +50,59 @@ fetch(Account, BlacklistId) ->
                    kz_datamgr:data_error().
 fetch('undefined', _BlacklistId, _Options) ->
     {'error', 'invalid_db_name'};
-fetch(_Account, 'undefined', _Options) ->
+fetch(_AccountId, 'undefined', _Options) ->
     {'error', 'not_found'};
-fetch(Account, BlacklistId=?NE_BINARY, Options) ->
-    AccountDb = kz_util:format_account_db(Account),
+fetch(AccountId, BlacklistId=?NE_BINARY, Options) ->
+    AccountDb = kz_util:format_account_db(AccountId),
     case kz_datamgr:open_cache_doc(AccountDb, BlacklistId) of
         {'error', _R}=E -> E;
         {'ok', Doc} -> maybe_filter_fetch(Doc, Options)
     end.
+
+-spec fetch_patterns(kz_term:ne_binary()) -> {'ok', kz_json:objects()} | {'error', 'not_found'}.
+fetch_patterns(AccountId) ->
+    Db = kz_util:format_account_db(AccountId),
+    Options = get_view_options(?LIST_BY_PATTERN),
+    case kz_datamgr:get_results(Db, ?LIST_BY_PATTERN, Options) of
+        {'ok', []} -> {'error', 'not_found'};
+        {'ok', _JObjs} = Responce -> Responce;
+        {'error', _}=_E ->
+            lager:error("error getting blacklist patterns for account ~s : ~p", [AccountId, _E]),
+            {'error', 'not_found'}
+    end.
+
+-spec fetch_number(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:ne_binary()) -> {'ok', kz_json:objects()} | {'error', 'not_found'}.
+fetch_number(AccountId, OwnerId, Number) ->
+    Db = kz_util:format_account_db(AccountId),
+    Options = get_view_options(?LIST_BY_NUMBER, Number, OwnerId),
+    case kz_datamgr:get_results(Db, ?LIST_BY_NUMBER, Options) of
+        {'ok', []} -> {'error', 'not_found'};
+        {'ok', _JObjs} = Responce -> Responce;
+        {'error', _}=_E ->
+            lager:error("error getting blacklists by number ~s for account ~s : ~p", [Number, AccountId, _E]),
+            {'error', 'not_found'}
+    end.
+
+-spec get_view_options(kz_term:ne_binary()) -> kz_term:proplist().
+get_view_options(?LIST_BY_PATTERN) ->
+    props:filter_undefined(
+      [{'group', 'true'}
+      ,{'group_level', 2}
+      ]).
+
+-spec get_view_options(kz_term:ne_binary(), kz_term:ne_binary(), kz_term:api_ne_binary()) -> kz_term:proplist().
+get_view_options(?LIST_BY_NUMBER, Number, 'undefined') ->
+    props:filter_undefined(
+      [{'key', [Number,'null']}
+      ,{'group', 'true'}
+      ,{'group_level', 2}
+      ]);
+get_view_options(?LIST_BY_NUMBER, Number, OwnerId) ->
+    props:filter_undefined(
+      [{'key', [Number, OwnerId]}
+      ,{'group', 'true'}
+      ,{'group_level', 2}
+      ]).
 
 -spec maybe_filter_fetch(doc(), map()) ->
                                 {'ok', doc()} |
