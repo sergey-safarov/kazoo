@@ -216,6 +216,8 @@ contact_vars_fold({<<"Proxy-Protocol">>, Proto}, Props) ->
         <<"ws", _/binary>> -> [{<<"Media-Webrtc">>, true} | Props];
         _ -> Props
     end;
+contact_vars_fold({<<"Proxy-Path">>, _} = ProxyPath, Props) ->
+    [ProxyPath | Props];
 contact_vars_fold({<<"Original-Contact">>, Contact}, Props) ->
     [#uri{}=UriContact] = kzsip_uri:uris(Contact),
     case props:get_value(<<"transport">>, UriContact#uri.opts) of
