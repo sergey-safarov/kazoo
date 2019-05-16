@@ -818,7 +818,7 @@ create_registration(JObj) ->
                                          ,registrar_hostname=RegistrarHostname
                                          ,contact=fix_contact(OriginalContact)
                                          ,original_contact=OriginalContact
-                                         ,bridge_uri=bridge_uri(OriginalContact, Proxy, Username, Realm)
+                                         ,bridge_uri=bridge_uri(OriginalContact, Username, Realm)
                                          ,previous_contact=kz_json:get_value(<<"Previous-Contact">>, JObj, Reg#registration.previous_contact)
                                          ,last_registration=kz_json:get_integer_value(<<"Last-Registration">>, JObj, Reg#registration.last_registration)
                                          ,initial_registration=kz_json:get_integer_value(<<"Initial-Registration">>, JObj, Reg#registration.initial_registration)
@@ -905,10 +905,9 @@ fix_contact('undefined') -> 'undefined';
 fix_contact(Contact) ->
     binary:replace(Contact, [<<"<">>, <<">">>], <<>>, ['global']).
 
--spec bridge_uri(kz_term:api_binary(), kz_term:api_binary(), binary(), binary()) -> kz_term:api_binary().
-bridge_uri(_Contact, 'undefined', _, _) -> 'undefined';
-bridge_uri('undefined', _Proxy, _, _) -> 'undefined';
-bridge_uri(Contact, _Proxy, Username, Realm) ->
+-spec bridge_uri(kz_term:api_binary(), binary(), binary()) -> kz_term:api_binary().
+bridge_uri('undefined', _, _) -> 'undefined';
+bridge_uri(Contact, Username, Realm) ->
     [#uri{}=UriContact] = kzsip_uri:uris(Contact),
     Scheme = UriContact#uri.scheme,
     BridgeUriOptions = bridge_uri_transport(UriContact),
