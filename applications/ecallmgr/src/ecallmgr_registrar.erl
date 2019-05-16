@@ -908,12 +908,10 @@ fix_contact(Contact) ->
 -spec bridge_uri(kz_term:api_binary(), kz_term:api_binary(), binary(), binary()) -> kz_term:api_binary().
 bridge_uri(_Contact, 'undefined', _, _) -> 'undefined';
 bridge_uri('undefined', _Proxy, _, _) -> 'undefined';
-bridge_uri(Contact, Proxy, Username, Realm) ->
+bridge_uri(Contact, _Proxy, Username, Realm) ->
     [#uri{}=UriContact] = kzsip_uri:uris(Contact),
-    [#uri{}=UriProxy] = kzsip_uri:uris(Proxy),
     Scheme = UriContact#uri.scheme,
     Options = #{uri_contact => UriContact
-               ,uri_proxy => UriProxy
                },
     BridgeUriOptions = bridge_uri_options(Options),
     BridgeUri = #uri{scheme=Scheme
@@ -926,7 +924,6 @@ bridge_uri(Contact, Proxy, Username, Realm) ->
 -spec bridge_uri_options(map()) -> kz_term:proplist().
 bridge_uri_options(Options) ->
     Routines = [fun bridge_uri_transport/2
-               ,fun bridge_uri_path/2
                ],
     lists:foldl(fun(Fun, Acc) -> Fun(Options, Acc) end, [], Routines).
 
@@ -940,10 +937,6 @@ bridge_uri_transport(#{uri_contact := UriContact}, Acc) ->
             end;
         'false' -> Acc
     end.
-
--spec bridge_uri_path(map(), kz_term:proplist()) -> kz_term:proplist().
-bridge_uri_path(#{uri_proxy := UriProxy}, Acc) ->
-    [{<<"fs_path">>, kzsip_uri:ruri(UriProxy)} | Acc].
 
 -spec existing_or_new_registration(kz_term:ne_binary(), kz_term:ne_binary()) -> registration().
 existing_or_new_registration(Username, Realm) ->
