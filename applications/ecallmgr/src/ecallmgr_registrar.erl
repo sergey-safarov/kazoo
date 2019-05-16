@@ -926,7 +926,7 @@ bridge_uri(Contact, Username, Realm) ->
 
 -spec bridge_uri_transport(kzsip_uri:uri()) -> kz_term:proplist().
 bridge_uri_transport(UriContact) ->
-    case application:get_env(?APP, 'use_transport_for_fs_path', 'false') of
+    case application:get_env(?APP, 'use_transport_for_proxy', 'false') of
         'true' ->
             case props:get_value(<<"transport">>, UriContact#uri.opts) of
                 'undefined' -> [];
