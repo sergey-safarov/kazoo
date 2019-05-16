@@ -1179,7 +1179,7 @@ create_sip_endpoint(Endpoint, Properties, #clid{}=Clid, Call) ->
                       ,{<<"SIP-Transport">>, get_sip_transport(SIPJObj)}
                       ,{<<"SIP-Interface">>, get_custom_sip_interface(SIPJObj)}
                       ,{<<"Route">>, kz_json:get_ne_binary_value(<<"route">>, SIPJObj)}
-                      ,{<<"Proxy-IP">>, kz_json:get_ne_binary_value(<<"proxy">>, SIPJObj)}
+                      ,{<<"Proxy-Path">>, kz_json:get_ne_binary_value(<<"proxy">>, SIPJObj)}
                       ,{<<"Forward-IP">>, kz_json:get_ne_binary_value(<<"forward">>, SIPJObj)}
                       ,{<<"Caller-ID-Name">>, Clid#clid.caller_name}
                       ,{<<"Caller-ID-Number">>, Clid#clid.caller_number}

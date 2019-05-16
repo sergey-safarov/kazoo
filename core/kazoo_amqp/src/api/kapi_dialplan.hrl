@@ -145,6 +145,7 @@
         ,<<"Privacy-Hide-Number">>
         ,<<"Presence-ID">>
         ,<<"Proxy-IP">>
+        ,<<"Proxy-Path">>
         ,<<"Proxy-Zone">>
         ,<<"Route">>
         ,<<"SIP-Interface">>
