@@ -662,6 +662,12 @@ kazoo_var_to_fs_var({<<"Confirm-File">>, V}, Vars) ->
                     ,"'"
                     ]) | Vars];
 
+kazoo_var_to_fs_var({<<"Proxy-Path">>, <<"sip:", _/binary>>=V}, Vars) ->
+    [ list_to_binary(["sip_route_uri='", V, "'"]) | Vars];
+
+kazoo_var_to_fs_var({<<"Proxy-Path">>, V}, Vars) ->
+    kazoo_var_to_fs_var({<<"Proxy-Path">>, <<"sip:", V/binary>>}, Vars);
+
 kazoo_var_to_fs_var({<<"SIP-Invite-Parameters">>, V}, Vars) ->
     [list_to_binary(["sip_invite_params='", kz_util:iolist_join(<<";">>, V), "'"]) | Vars];
 
