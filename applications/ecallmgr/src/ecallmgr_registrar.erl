@@ -190,15 +190,18 @@ lookup_contact(<<_/binary>> = Realm, <<_/binary>> = Username) ->
     case get_registration(Realm, Username) of
         'undefined' -> fetch_contact(Username, Realm);
         #registration{contact=Contact
+                     ,proxy=Proxy
                      ,bridge_uri='undefined'
                      }=Reg ->
-            lager:info("found user ~s@~s contact ~s"
-                      ,[Username, Realm, Contact]
+            lager:info("found user ~s@~s contact ~s via proxy ~s"
+                      ,[Username, Realm, Contact, Proxy]
                       ),
             {'ok', Contact, contact_vars(to_props(Reg))};
-        #registration{bridge_uri=Contact}=Reg ->
-            lager:info("found user ~s@~s bridge uri  ~s"
-                      ,[Username, Realm, Contact]
+        #registration{bridge_uri=Contact
+                     ,proxy=Proxy
+                     }=Reg ->
+            lager:info("found user ~s@~s bridge uri ~s via proxy ~s"
+                      ,[Username, Realm, Contact, Proxy]
                       ),
             {'ok', Contact, contact_vars(to_props(Reg))}
     end.
@@ -620,8 +623,9 @@ fetch_contact(Username, Realm) ->
     case fetch_registration(Username, Realm) of
         {'ok', JObj} ->
             Contact = kz_json:get_first_defined([<<"Bridge-RURI">>, <<"Contact">>], JObj),
-            lager:info("found user ~s@~s contact ~s via fetch"
-                      ,[Username, Realm, Contact]
+            Proxy = kz_json:get_ne_binary(<<"Proxy-Path">>, JObj),
+            lager:info("found user ~s@~s contact ~s via proxy ~s using fetch"
+                      ,[Username, Realm, Contact, Proxy]
                       ),
             {'ok', Contact, contact_vars(kz_json:to_proplist(JObj))};
         {'error', _R}=Error ->
