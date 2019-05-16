@@ -865,7 +865,7 @@ endpoint_jobj_to_record(Endpoint, IncludeVars) ->
                              ,realm = kz_json:get_ne_value(<<"To-Realm">>, Endpoint)
                              ,number = kz_json:get_ne_value(<<"To-DID">>, Endpoint)
                              ,route = kz_json:get_ne_value(<<"Route">>, Endpoint)
-                             ,proxy_address = kz_json:get_ne_value(<<"Proxy-IP">>, Endpoint)
+                             ,proxy_address = kz_json:get_ne_value(<<"Proxy-Path">>, Endpoint)
                              ,forward_address = kz_json:get_ne_value(<<"Forward-IP">>, Endpoint)
                              ,transport = kz_json:get_ne_value(<<"SIP-Transport">>, Endpoint)
                              ,span = get_endpoint_span(Endpoint)
@@ -1178,11 +1178,11 @@ guess_username(_) -> <<"kazoo">>.
 -spec maybe_replace_fs_path(kz_term:ne_binary(), bridge_endpoint()) -> kz_term:ne_binary().
 maybe_replace_fs_path(Contact, #bridge_endpoint{proxy_address='undefined'}) -> Contact;
 maybe_replace_fs_path(Contact, #bridge_endpoint{proxy_address = <<"sip:", _/binary>> = Proxy}) ->
-    case re:replace(Contact, <<";fs_path=[^;?]*">>, <<";fs_path=", Proxy/binary>>, [{'return', 'binary'}]) of
-        Contact ->
-            %% NOTE: this will be invalid if the channel has headers, see rfc3261 19.1.1
-            <<Contact/binary, ";fs_path=", Proxy/binary>>;
-        Updated -> Updated
+    case re:replace(Contact, <<";fs_path=[^;?]*">>, <<>>, [{'return', 'binary'}]) of
+        Contact -> Contact;
+        Updated ->
+            lager:warning("Overriding endpoint fs_path param by proxy value ~s", [Proxy]),
+            Updated
     end;
 maybe_replace_fs_path(Contact, #bridge_endpoint{proxy_address=Proxy}=Endpoint) ->
     maybe_replace_fs_path(Contact, Endpoint#bridge_endpoint{proxy_address = <<"sip:", Proxy/binary>>}).
