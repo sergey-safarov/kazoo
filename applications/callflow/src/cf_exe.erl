@@ -779,9 +779,59 @@ cf_module_not_found(Call) ->
                              {kz_term:pid_ref(), CFModule}.
 spawn_cf_module(CFModule, Data, Call) ->
     AMQPConsumer = kz_amqp_channel:consumer_pid(),
-    {kz_util:spawn_monitor(fun cf_module_task/4, [CFModule, Data, Call, AMQPConsumer])
+    {kz_util:spawn_monitor(fun cf_maybe_blacklisted/4, [CFModule, Data, Call, AMQPConsumer])
     ,CFModule
     }.
+
+-spec cf_maybe_blacklisted(atom(), kz_json:object(), kapps_call:call(), pid()) -> any().
+cf_maybe_blacklisted(CFModule, Data, Call, AMQPWorker) ->
+    AccountBlAction = kapps_call:account_blacklist_action(Call),
+    case cf_maybe_user_blacklists(CFModule, Data, AccountBlAction, Call) of
+        #cf_blacklist_action{action = <<"block">>} ->
+            lager:info("action ~s execution is blocked by blacklists", [CFModule]),
+            _ = kapps_call_command:response(<<"603">>, <<"Decline">>, Call),
+            stop(Call);
+        #cf_blacklist_action{caller_name = 'undefined', action = ActionValue} ->
+            UpdatedCall = kapps_call:set_user_blacklist_action(ActionValue, Call),
+            cf_module_task(CFModule, Data, UpdatedCall, AMQPWorker);
+        #cf_blacklist_action{caller_name = CallerName, action = ActionValue} ->
+            UpdatedCall1 = kapps_call:set_user_blacklist_action(ActionValue, Call),
+            UpdatedCall2 = kapps_call:set_caller_id_name(CallerName, UpdatedCall1),
+            cf_module_task(CFModule, Data, UpdatedCall2, AMQPWorker)
+    end.
+
+-spec cf_maybe_user_blacklists(atom(), kz_json:object(), kz_term:api_ne_binary(), kapps_call:call()) -> cf_blacklist_action().
+cf_maybe_user_blacklists(CFModule, Data, AccountBlAction, Call) ->
+    case kz_module:is_exported(CFModule, 'blacklist_action', 2) of
+        'true' -> cf_try_user_blacklists(CFModule, Data, AccountBlAction, Call);
+        'false' -> cf_map_blacklist_actions('false', AccountBlAction, #cf_blacklist_action{})
+    end.
+
+-spec cf_try_user_blacklists(atom(), kz_json:object(), kz_term:api_ne_binary(), kapps_call:call()) -> cf_blacklist_action().
+cf_try_user_blacklists(CFModule, Data, AccountBlAction, Call) ->
+    try CFModule:blacklist_action(Data, Call) of
+        {'ok', CfBlAction} ->
+            cf_map_blacklist_actions('true', AccountBlAction, CfBlAction)
+    catch
+        ?STACKTRACE(_E, R, ST)
+        lager:info("~s:blacklist_action/2 died unexpectedly (~s): ~p", [CFModule, _E, R]),
+        kz_util:log_stacktrace(ST),
+        throw(R)
+        end.
+
+-spec cf_map_blacklist_actions(boolean(), kz_term:api_ne_binary(), cf_blacklist_action()) -> cf_blacklist_action().
+cf_map_blacklist_actions(_UsedUserBlacklist, 'undefined', #cf_blacklist_action{action = 'undefined'}) ->
+    #cf_blacklist_action{};
+cf_map_blacklist_actions('false', <<"block">>, #cf_blacklist_action{action = 'undefined'}) ->
+    #cf_blacklist_action{action = <<"block">>};
+cf_map_blacklist_actions('false', <<"pass">>, #cf_blacklist_action{action = 'undefined'}) ->
+    #cf_blacklist_action{action = <<"pass">>};
+cf_map_blacklist_actions('false', AccountBlAction, #cf_blacklist_action{action = 'undefined'}) ->
+    lager:debug("callflow module use old blacklist behaviour, overriding `~s` value by `block`", [AccountBlAction]),
+    #cf_blacklist_action{action = <<"block">>};
+cf_map_blacklist_actions('true', AccountBlAction, #cf_blacklist_action{action = UserBlAction, blacklist_strategy = UserBLStrategy}=CfBlAction) ->
+    ResultedBLAction = kzd_blacklists:compare_actions(UserBLStrategy, UserBlAction, AccountBlAction),
+    CfBlAction#cf_blacklist_action{action = ResultedBLAction}.
 
 -spec cf_module_task(atom(), kz_json:object(), kapps_call:call(), pid()) -> any().
 cf_module_task(CFModule, Data, Call, AMQPConsumer) ->
