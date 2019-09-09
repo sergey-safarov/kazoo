@@ -784,7 +784,7 @@ spawn_cf_module(CFModule, Data, Call) ->
     }.
 
 -spec cf_maybe_blacklisted(atom(), kz_json:object(), kapps_call:call(), pid()) -> any().
-cf_maybe_blacklisted(CFModule, Data, Call, AMQPWorker) ->
+cf_maybe_blacklisted(CFModule, Data, Call, AMQPConsumer) ->
     AccountBlAction = kapps_call:account_blacklist_action(Call),
     case cf_maybe_user_blacklists(CFModule, Data, AccountBlAction, Call) of
         #cf_blacklist_action{action = <<"block">>} ->
@@ -793,11 +793,11 @@ cf_maybe_blacklisted(CFModule, Data, Call, AMQPWorker) ->
             stop(Call);
         #cf_blacklist_action{caller_name = 'undefined', action = ActionValue} ->
             UpdatedCall = kapps_call:set_user_blacklist_action(ActionValue, Call),
-            cf_module_task(CFModule, Data, UpdatedCall, AMQPWorker);
+            cf_module_task(CFModule, Data, UpdatedCall, AMQPConsumer);
         #cf_blacklist_action{caller_name = CallerName, action = ActionValue} ->
             UpdatedCall1 = kapps_call:set_user_blacklist_action(ActionValue, Call),
             UpdatedCall2 = kapps_call:set_caller_id_name(CallerName, UpdatedCall1),
-            cf_module_task(CFModule, Data, UpdatedCall2, AMQPWorker)
+            cf_module_task(CFModule, Data, UpdatedCall2, AMQPConsumer)
     end.
 
 -spec cf_maybe_user_blacklists(atom(), kz_json:object(), kz_term:api_ne_binary(), kapps_call:call()) -> cf_blacklist_action().
@@ -826,12 +826,12 @@ cf_map_blacklist_actions('false', <<"block">>, #cf_blacklist_action{action = 'un
     #cf_blacklist_action{action = <<"block">>};
 cf_map_blacklist_actions('false', <<"pass">>, #cf_blacklist_action{action = 'undefined'}) ->
     #cf_blacklist_action{action = <<"pass">>};
-cf_map_blacklist_actions('false', AccountBlAction, #cf_blacklist_action{action = 'undefined'}) ->
-    lager:debug("callflow module use old blacklist behaviour, overriding `~s` value by `block`", [AccountBlAction]),
+cf_map_blacklist_actions('false', AccountBlacklistAction, #cf_blacklist_action{action = 'undefined'}) ->
+    lager:debug("callflow module use old blacklist behaviour, overriding `~s` value by `block`", [AccountBlacklistAction]),
     #cf_blacklist_action{action = <<"block">>};
-cf_map_blacklist_actions('true', AccountBlAction, #cf_blacklist_action{action = UserBlAction, blacklist_strategy = UserBLStrategy}=CfBlAction) ->
-    ResultedBLAction = kzd_blacklists:compare_actions(UserBLStrategy, UserBlAction, AccountBlAction),
-    CfBlAction#cf_blacklist_action{action = ResultedBLAction}.
+cf_map_blacklist_actions('true', AccountBlacklistAction, #cf_blacklist_action{action = UserBlacklistAction, blacklist_strategy = UserBlacklistStrategy}=CfBlacklistAction) ->
+    ResultedBlacklistAction = kzd_blacklists:compare_actions(UserBlacklistStrategy, UserBlacklistAction, AccountBlacklistAction),
+    CfBlacklistAction#cf_blacklist_action{action = ResultedBlacklistAction}.
 
 -spec cf_module_task(atom(), kz_json:object(), kapps_call:call(), pid()) -> any().
 cf_module_task(CFModule, Data, Call, AMQPConsumer) ->
