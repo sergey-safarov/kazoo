@@ -120,7 +120,14 @@
 new() ->
     kz_doc:set_type(kz_json_schema:default_object(?SCHEMA), type()).
 
--spec blacklists_strategy(doc()) -> binary().
+-spec blacklists_strategy(doc() | kz_term:ne_binary()) -> binary().
+blacklists_strategy(AccountId) when is_binary(AccountId) ->
+    case fetch(AccountId) of
+        {'ok', JObj} -> blacklists_strategy(JObj);
+        {'error', _R} ->
+            lager:debug("failed to open account ~s definition, returning default blacklists_strategy 'strict' value", [AccountId]),
+            <<"strict">>
+    end;
 blacklists_strategy(Doc) ->
     blacklists_strategy(Doc, <<"strict">>).
 
