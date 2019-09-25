@@ -36754,7 +36754,6 @@
             "type": "string"
         },
         "PATTERN": {
-            "description": "request PATTERN parameter",
             "in": "path",
             "maxLength": 32,
             "minLength": 32,
@@ -37888,10 +37887,10 @@
                         "$ref": "#/parameters/auth_token_header"
                     },
                     {
-                        "$ref": "#/parameters/ACCOUNT_ID"
+                        "$ref": "#/parameters/PHONE_NUMBER"
                     },
                     {
-                        "$ref": "#/parameters/PHONE_NUMBER"
+                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {
@@ -37925,10 +37924,10 @@
                         "$ref": "#/parameters/auth_token_header"
                     },
                     {
-                        "$ref": "#/parameters/ACCOUNT_ID"
+                        "$ref": "#/parameters/PATTERN"
                     },
                     {
-                        "$ref": "#/parameters/PATTERN"
+                        "$ref": "#/parameters/ACCOUNT_ID"
                     }
                 ],
                 "responses": {
