@@ -812,8 +812,8 @@ cf_try_user_blacklists(CFModule, Data, AccountBlAction, Call) ->
     try CFModule:blacklist_action(Data, Call) of
         {'ok', CfBlAction} ->
             cf_map_blacklist_actions('true', AccountBlAction, CfBlAction)
-    catch
-        ?STACKTRACE(_E, R, ST)
+    catch _E:R ->
+        ST = erlang:get_stacktrace(),
         lager:info("~s:blacklist_action/2 died unexpectedly (~s): ~p", [CFModule, _E, R]),
         kz_util:log_stacktrace(ST),
         throw(R)
