@@ -20,7 +20,8 @@
             "map": [
                 "function(doc) {",
                 "  if (doc.pvt_type != 'blacklist' || doc.pvt_deleted) return;",
-                "  for (var i in doc.numbers) emit([i, doc.owner], {'id' : doc._id, 'name' : doc.name, 'action' : doc.action, 'owner' : doc.owner, 'enabled' : doc.enabled});}"
+                "  for (var i in doc.numbers) emit([i, doc.owner], {'id' : doc._id, 'name' : doc.name, 'action' : doc.action, 'owner' : doc.owner, 'enabled' : doc.enabled});",
+                "}"
             ]
         },
         "listing_by_owner": {
@@ -36,7 +37,8 @@
             "map": [
                 "function(doc) {",
                 "  if (doc.pvt_type != 'blacklist' || doc.pvt_deleted) return;",
-                "  for (var i in doc.patterns) emit([i, doc.owner], {'id' : doc._id, 'name' : doc.name, 'action' : doc.action, 'owner' : doc.owner, 'enabled' : doc.enabled});}"
+                "  for (var i in doc.patterns) emit([i, doc.owner], {'id' : doc._id, 'name' : doc.name, 'action' : doc.action, 'owner' : doc.owner, 'enabled' : doc.enabled});",
+                "}"
             ]
         }
     }
