@@ -338,7 +338,7 @@ set_owner_id(Doc, 'undefined') ->
 set_owner_id(Doc, OwnerId) ->
     kz_json:set_value([<<"owner_id">>], OwnerId, Doc).
 
--spec set_owner_id(doc(), kz_term:ne_binary(), kz_term:ne_binary()) -> doc().
+-spec set_owner_id(doc(), kz_term:api_ne_binary(), kz_term:ne_binary()) -> doc().
 set_owner_id(Doc, AccountId, AccountId) ->
     set_owner_id(Doc, 'undefined', AccountId);
 set_owner_id(Doc, OwnerId, AccountId) ->

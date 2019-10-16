@@ -78,7 +78,7 @@ load_patterns(AccountId, OwnerId) ->
         {'error', _} -> cache_patterns(AccountId, OwnerId, [])
     end.
 
--spec compile_patterns(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_json:object()) -> lookup_ret_patterns().
+-spec compile_patterns(kz_term:ne_binary(), kz_term:api_ne_binary(), patterns_view_items()) -> lookup_ret_patterns().
 compile_patterns(AccountId, OwnerId, Props) ->
     compile_patterns(AccountId, OwnerId, Props, []).
 
