@@ -94,7 +94,7 @@ compare_actions(?RELAXED, Action1, Action2) ->
 fetch_patterns(AccountId, OwnerId) ->
     fetch_patterns(AccountId, OwnerId, #{}).
 
--spec fetch_patterns(kz_term:ne_binary(), kz_term:api_ne_binary(), map()) -> {'ok', kz_json:object()} | {'error', 'not_found'}.
+-spec fetch_patterns(kz_term:ne_binary(), kz_term:api_ne_binary(), map()) -> {'ok', kz_term:proplist()} | {'error', 'not_found'}.
 fetch_patterns(AccountId, OwnerId, Options) ->
     Db = kz_util:format_account_db(AccountId),
     ViewOptions = get_view_options(?LIST_BY_OWNER, OwnerId, <<"pattern">>),
@@ -110,7 +110,7 @@ fetch_patterns(AccountId, OwnerId, Options) ->
 fetch_number(AccountId, OwnerId, Number) ->
     fetch_number(AccountId, OwnerId, Number, #{}).
 
--spec fetch_number(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:ne_binary(), map()) -> {'ok', kz_json:object()} | {'error', 'not_found'}.
+-spec fetch_number(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:ne_binary(), map()) -> {'ok', kz_term:proplist()} | {'error', 'not_found'}.
 fetch_number(AccountId, OwnerId, Number, Options) ->
     Db = kz_util:format_account_db(AccountId),
     ViewOptions = get_view_options(?LIST_BY_OWNER, OwnerId, <<"number">>, Number),
@@ -152,7 +152,7 @@ get_view_options(?LIST_BY_OWNER, OwnerId, <<"number">> = Type, Number) ->
       [{'key', [OwnerId, Type, Number]}
       ]).
 
--spec format_view_results(kz_json:objects(), map()) -> {'ok', kz_json:object()} | {'error', 'not_found'}.
+-spec format_view_results(kz_json:objects(), map()) -> {'ok', kz_term:proplist()} | {'error', 'not_found'}.
 format_view_results(JObjs, Options) ->
     %% Group search results by pattern
     MergedByKey = lists:foldl(fun(JObj, Acc) ->
@@ -172,7 +172,7 @@ format_view_results(JObjs, Options) ->
                                     ,MergedByKey),
     case FilteredResults == [] of
         'true' -> {'error', 'not_found'};
-        'false' -> {'ok', kz_json:from_list(FilteredResults)}
+        'false' -> {'ok', FilteredResults}
     end.
 
 -spec get_view_filters(map()) -> [fun()].
