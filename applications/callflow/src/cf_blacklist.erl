@@ -47,8 +47,9 @@ do_lookup(Number, AccountId, OwnerId, Strategy) ->
         {'error', 'not_found'} when Number =/= ?NO_MATCH_BL ->
             lookup_patterns(Number, AccountId, OwnerId, Strategy);
         {'error', 'not_found'} = Responce -> Responce;
-        {'ok', [JObj] } ->
-            Action = kz_json:get_ne_binary_value(<<"action">>, JObj, <<"block">>),
+        {'ok', JObj } ->
+            [Value] = kz_json:get_list_value(Number, JObj),
+            Action = kz_json:get_ne_binary_value(<<"action">>, Value, <<"block">>),
             CallerName = kz_json:get_ne_binary_value(<<"name">>, JObj),
             cache_number(AccountId, OwnerId, Number, Action, CallerName)
     end.

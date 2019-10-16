@@ -110,25 +110,13 @@ fetch_patterns(AccountId, OwnerId, Options) ->
 fetch_number(AccountId, OwnerId, Number) ->
     fetch_number(AccountId, OwnerId, Number, #{}).
 
--spec fetch_number(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:ne_binary(), map()) -> {'ok', kz_json:objects()} | {'error', 'not_found'}.
+-spec fetch_number(kz_term:ne_binary(), kz_term:api_ne_binary(), kz_term:ne_binary(), map()) -> {'ok', kz_json:object()} | {'error', 'not_found'}.
 fetch_number(AccountId, OwnerId, Number, Options) ->
     Db = kz_util:format_account_db(AccountId),
     ViewOptions = get_view_options(?LIST_BY_OWNER, OwnerId, <<"number">>, Number),
     case kz_datamgr:get_results(Db, ?LIST_BY_OWNER, ViewOptions) of
         {'ok', []} -> {'error', 'not_found'};
-        {'ok', JObjs} ->
-            Values = lists:foldl(fun(JObj, Acc) -> 
-                                          case kz_json:get_value(<<"value">>, JObj, []) of
-                                              [] -> Acc;
-                                              Value -> [Value | Acc]
-                                          end
-                                  end
-                                 ,[]
-                                 ,JObjs),
-            case filter_results(Values, Options) of
-                [] -> {'error', 'not_found'};
-                ResultsFiltered -> {'ok', ResultsFiltered}
-            end;
+        {'ok', JObjs} -> format_view_results(JObjs, Options);
         {'error', _}=_E ->
             lager:error("error getting blacklists by number ~s for account ~s and owner ~s : ~p", [Number, AccountId, OwnerId, _E]),
             {'error', 'not_found'}
@@ -167,24 +155,24 @@ get_view_options(?LIST_BY_OWNER, OwnerId, <<"number">> = Type, Number) ->
 -spec format_view_results(kz_json:objects(), map()) -> {'ok', kz_json:object()} | {'error', 'not_found'}.
 format_view_results(JObjs, Options) ->
     %% Group search results by pattern
-    MergedPatterns = lists:foldl(fun(JObj, Acc) ->
+    MergedByKey = lists:foldl(fun(JObj, Acc) ->
                                         [_Owner, _Type, Key] = kz_json:get_value(<<"key">>, JObj),
                                         ValueCurrent = kz_json:get_list_value(Key, Acc, []),
                                         kz_json:set_value(Key, [kz_json:get_value(<<"value">>, JObj) | ValueCurrent], Acc)
                                   end
                                  ,kz_json:new()
                                  ,JObjs),
-    FilteredPatterns = kz_json:foldl(fun(Pattern, Values, Acc) ->
+    FilteredResults = kz_json:foldl(fun(Key, Values, Acc) ->
                                             case filter_results(Values, Options) of
                                                 [] -> Acc;
-                                                Results -> [{Pattern, Results} | Acc]
+                                                Results -> [{Key, Results} | Acc]
                                             end
                                      end
                                     ,[]
-                                    ,MergedPatterns),
-    case FilteredPatterns == [] of
+                                    ,MergedByKey),
+    case FilteredResults == [] of
         'true' -> {'error', 'not_found'};
-        'false' -> {'ok', kz_json:from_list(FilteredPatterns)}
+        'false' -> {'ok', kz_json:from_list(FilteredResults)}
     end.
 
 -spec get_view_filters(map()) -> [fun()].
