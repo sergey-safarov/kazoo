@@ -2,17 +2,33 @@
 
 Blackhole creates a point of contact between KAZOO and your system, using websockets, to stream events occurring in KAZOO to your connected session(s). Blackhole is effectively an AMQP->Websocket bridge, providing you with real-time event streams about calls, API changes, and more.
 
-## Setting up
+Module support
+1. events subscription;
+2. JSON REST API relaying to `crossbar` application.
+
+Module support this event types:
+1. call events;
+2. conference events;
+3. fax events;
+4. database object creation;
+5. phone presence events.
+
+
+
+## Setting up application
 
 1. Start the Blackhole Crossbar module
     * `sup kapps_controller restart_app blackhole`
-2. Find your Account ID (e.g. `4b31dd1d32ce6d249897c06332375d65`)
-3. [Obtain an Auth Token](../../crossbar/doc/how_to_authenticate.md)
-4. Copy the **Example Client** code into an HTML file (named e.g. `kazoo_example_ws_client.html`)
+
+## Setting up events subscriptions
+
+1. Find your Account ID (e.g. `4b31dd1d32ce6d249897c06332375d65`)
+2. [Obtain an Auth Token](../../crossbar/doc/how_to_authenticate.md)
+3. Copy the **Example Client** code into an HTML file (named e.g. `kazoo_example_ws_client.html`)
     1. Replace `{BLACKHOLE_IP_ADDRESS}` with your Kazoo server's IP address
     2. Replace default `5555` with the port number you can configure in **sysconfig > blackhole > port** (integer)
     3. Replace the `{ACCOUNT_ID}` and `{AUTH_TOKEN}` fields with your data. `{REQUEST_ID}` is optional, a self generated GUID which is present in the event message. You can just use same as `{ACCOUNT_ID}` or any random number.
-5. You're all set!
+4. You're all set!
 
 Now access `kazoo_example_ws_client.html` with your favorite Web browser and open the JavaScript console.
 
@@ -20,6 +36,57 @@ Now access `kazoo_example_ws_client.html` with your favorite Web browser and ope
 * Make a call: the events your client is listening for will appear in the console!
 
 From here, you can write your own JavaScript callbacks, triggered every time a registered event is sent from Kazoo.
+
+## Setting up JSON REST API relaying to `crossbar` application
+
+You can convert JSON REST API to JSON API via web-socket using this rules.
+1. need add `action: 'json_api'`;
+2. optionaly add `method: '{REST_METHOD_NAME}'`, if not provided used `GET` value;
+3. need add `path: '{REST_PATH}'`;
+4. optionaly add `data` object with `data` object from REST request.
+5. optionaly add `auth_token` to make api call with different auth tokek, following request will use new token permissions until new token value provided or new token generated;
+
+*Example 1: auth request*
+```js
+{
+    action: 'json_api',
+    method: 'PUT',
+    path: '/v2/user_auth',
+    data: {
+        credentials: '{SHA512_OR_MD5_SUM}',
+        account_name: 'master'
+    }
+}
+```
+
+*Example 2: stop acoustic speech recognition on given channel*
+```js
+{
+    action: 'json_api',
+    method: 'POST',
+    path: '/v2/accounts/{ACCOUNT_ID}/channels/{CHANNEL_ID}',
+    data: {
+        action: 'detect_speech',
+        detect_speech_action: 'stop'
+    }
+}
+```
+
+*Example 3: make api call with new token*
+```js
+{
+    action: 'json_api',
+    path: '/v2/accounts/{ACCOUNT_ID}/devices?paginate=false',
+    auth_token: '{NEW_TOKEN}'
+}
+```
+*Example 4: make api call with new token*
+```js
+{
+    action: 'json_api',
+    path: '/v2/accounts/{ACCOUNT_ID}/directories/{DIRECTORY_ID}?accept=pdf&auth_token={NEW_TOKEN}'
+}
+```
 
 ## Example Client
 
