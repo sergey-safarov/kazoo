@@ -105,7 +105,22 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/channels/{UUID}
 ```
 
-Available `action` values are `transfer`, `hangup`, `break`, `callflow`, and `intercept`.
+Available `action` values are `detect_speech`, `transfer`, `hangup`, `break`, `callflow`, and `intercept`.
+
+### detect_speech
+
+```shell
+curl -v -X POST \
+    -H "Content-Type: application/json" \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"module":"detect_speech","data":{"action":"start","speech_config":"{SPEECH_CONFIG_ID}"}},"action":"metaflow"}' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/channels/{UUID}
+```
+
+Key | Description | Type | Default
+--- | ----------- | ---- | -------
+`action` | Defines which detect_speech action need to execute on channel | `string('start' | 'stop' | 'pause' | 'resume' | 'init' | 'start-input-timers' | 'grammar' | 'nogrammar' | 'grammaron' | 'grammaroff' | 'grammarsalloff' | 'param')` |
+`speech_config` | defined which `spech_config_id` need to use, applicable for 'start' command  | `string()` |
 
 ### Transfer
 
