@@ -105,7 +105,7 @@ curl -v -X POST \
     http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/channels/{UUID}
 ```
 
-Available `action` values are `detect_speech`, `transfer`, `hangup`, `break`, `callflow`, and `intercept`.
+Available `action` values are `detect_speech`, `detect_machine`, `transfer`, `hangup`, `break`, `callflow`, and `intercept`.
 
 ### detect_speech
 
@@ -121,6 +121,30 @@ Key | Description | Type | Default
 --- | ----------- | ---- | -------
 `action` | Defines which detect_speech action need to execute on channel | `string('start' | 'stop' | 'pause' | 'resume' | 'init' | 'start-input-timers' | 'grammar' | 'nogrammar' | 'grammaron' | 'grammaroff' | 'grammarsalloff' | 'param')` |
 `speech_config` | defined which `spech_config_id` need to use, applicable for 'start' command  | `string()` |
+
+### detect_machine
+
+```shell
+curl -v -X POST \
+    -H "Content-Type: application/json" \
+    -H "X-Auth-Token: {AUTH_TOKEN}" \
+    -d '{"data":{"action":"detect_machine","detect_machine_action":"start","silent_threshold":96,"silent_initial":3500}}' \
+    http://{SERVER}:8000/v2/accounts/{ACCOUNT_ID}/channels/{UUID}
+```
+
+Key | Description | Type | Default
+--- | ----------- | ---- | -------
+`action` | to detect machine need use `detect_machine` value | `string('detect_speech' | 'detect_machine' | 'transfer' | 'hangup' | 'break' | 'callflow' | 'intercept')` |
+`detect_machine_action` | action for `detect_machine` function | `string('start' | 'stop')` |
+`silent_threshold` | please add info | `integer()` |
+`silent_initial` | please add info | `integer()` |
+`silent_after_intro` | please add info | `integer()` |
+`silent_max_session` | please add info | `integer()` |
+`noise_max_intro` | please add info | `integer()` |
+`noise_min_length` | please add info | `integer()` |
+`noise_inter_silence` | please add info | `integer()` |
+`noise_max_count` | please add info | `integer()` |
+`total_analysis_time` | please add info | `integer()` |
 
 ### Transfer
 
